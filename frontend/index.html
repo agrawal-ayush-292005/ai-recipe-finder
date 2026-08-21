@@ -1,68 +1,70 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>AI Recipe Finder</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 50px auto;
-            padding: 20px;
-            text-align: center;
-        }
-        h1 {
-            color: #333;
-        }
-        .test-btn {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-        .test-btn:hover {
-            background: #45a049;
-        }
-        #result {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f0f0f0;
-            border-radius: 5px;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Recipe Finder - 3D</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>🍳 AI Recipe Finder</h1>
-    <p>Your frontend is working!</p>
-    
-    <button class="test-btn" onclick="testAPI()">Test Backend Connection</button>
-    
-    <div id="result"></div>
+    <!-- 3D Background Particles -->
+    <div class="gradient-bg"></div>
+    <div class="particles-container">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
 
-    <script>
-        async function testAPI() {
-            const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = '⏳ Testing connection...';
+    <div class="auth-container" id="authSection">
+        <div class="auth-box">
+            <span class="logo">🍳</span>
+            <h1>AI Recipe Finder</h1>
+            <p class="subtitle">Discover delicious recipes from your ingredients</p>
             
-            try {
-                // ✅ FIXED: Changed from 5000 to 3000
-                const response = await fetch('http://localhost:3000/api/test');
-                const data = await response.json();
-                resultDiv.innerHTML = `
-                    ✅ Backend is connected!<br>
-                    Message: ${data.message}<br>
-                    Timestamp: ${new Date().toISOString()}
-                `;
-            } catch (error) {
-                resultDiv.innerHTML = `
-                    ❌ Failed to connect to backend.<br>
-                    Make sure the server is running!<br>
-                    Error: ${error.message}
-                `;
-            }
-        }
-    </script>
+            <!-- Login Form -->
+            <div id="loginForm">
+                <h2>Welcome Back</h2>
+                <div class="form-group">
+                    <label for="loginEmail">📧 Email Address</label>
+                    <input type="email" id="loginEmail" placeholder="you@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">🔒 Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password">
+                </div>
+                <button id="loginBtn" class="btn-primary">Login</button>
+                <p class="toggle-link">
+                    Don't have an account? <a id="showRegisterLink">Register here</a>
+                </p>
+            </div>
+
+            <!-- Register Form -->
+            <div id="registerForm" style="display: none;">
+                <h2>Create Account</h2>
+                <div class="form-group">
+                    <label for="registerUsername">👤 Username</label>
+                    <input type="text" id="registerUsername" placeholder="Choose a username">
+                </div>
+                <div class="form-group">
+                    <label for="registerEmail">📧 Email Address</label>
+                    <input type="email" id="registerEmail" placeholder="you@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword">🔒 Password (min 6 characters)</label>
+                    <input type="password" id="registerPassword" placeholder="Create a strong password">
+                </div>
+                <button id="registerBtn" class="btn-primary">Create Account</button>
+                <p class="toggle-link">
+                    Already have an account? <a id="showLoginLink">Login here</a>
+                </p>
+            </div>
+
+            <div id="authMessage" class="message"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>

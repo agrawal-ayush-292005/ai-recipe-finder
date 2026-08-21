@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Recipe Finder - 3D Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- 3D Background -->
+    <div class="gradient-bg"></div>
+    <div class="particles-container">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <span class="logo-icon">🍳</span>
+            <h2>AI Recipe Finder</h2>
+        </div>
+        <div class="nav-user">
+            <span id="userDisplay">👋 Welcome!</span>
+            <button id="logoutBtn" class="btn-logout">Logout</button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Recipe Form -->
+        <div class="recipe-form" id="recipeForm">
+            <h2>📝 Create New Recipe</h2>
+            <form id="createRecipeForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="recipeTitle">Recipe Title *</label>
+                        <input type="text" id="recipeTitle" placeholder="e.g., Spaghetti Carbonara" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="recipeDifficulty">Difficulty</label>
+                        <select id="recipeDifficulty">
+                            <option value="Easy">Easy</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="Hard">Hard</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="recipePrepTime">Prep Time (minutes)</label>
+                        <input type="number" id="recipePrepTime" placeholder="15">
+                    </div>
+                    <div class="form-group">
+                        <label for="recipeCookTime">Cook Time (minutes)</label>
+                        <input type="number" id="recipeCookTime" placeholder="30">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="recipeServings">Servings</label>
+                        <input type="number" id="recipeServings" placeholder="4">
+                    </div>
+                    <div class="form-group">
+                        <label for="recipeImage">Image URL</label>
+                        <input type="text" id="recipeImage" placeholder="https://example.com/image.jpg">
+                    </div>
+                </div>
+                <div class="form-group full-width">
+                    <label for="recipeDescription">Description</label>
+                    <textarea id="recipeDescription" placeholder="Brief description of the recipe"></textarea>
+                </div>
+                <div class="form-group full-width">
+                    <label for="recipeIngredients">Ingredients *</label>
+                    <textarea id="recipeIngredients" placeholder="List ingredients separated by commas&#10;e.g., Pasta, Eggs, Pancetta, Parmesan, Pepper"></textarea>
+                </div>
+                <div class="form-group full-width">
+                    <label for="recipeInstructions">Instructions *</label>
+                    <textarea id="recipeInstructions" placeholder="Step-by-step instructions&#10;1. Boil pasta&#10;2. Cook pancetta&#10;3. Mix everything"></textarea>
+                </div>
+                <button type="submit" class="btn-primary" id="submitRecipeBtn">✨ Add Recipe</button>
+            </form>
+        </div>
+
+        <!-- Recipe List -->
+        <div class="section-header">
+            <h2>📋 All Recipes</h2>
+            <button id="refreshBtn" class="btn-secondary">🔄 Refresh</button>
+        </div>
+        <div id="recipeList" class="recipes-grid">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading recipes...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
