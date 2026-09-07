@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pantry - Your Pantry</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="index.html">
+                <span class="logo-icon">🥘</span>
+                <h1>pantry<span>®</span></h1>
+            </a>
+        </div>
+        <div class="nav-links" id="navLinks">
+            <a href="index.html">Home</a>
+            <a href="recipes.html">Browse</a>
+            <a href="pantry.html" class="active">Your Pantry</a>
+            <a href="about.html">About</a>
+            <a href="contact.html">Contact</a>
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            <a href="login.html" class="btn-nav btn-nav-secondary">
+                <i class="fas fa-user"></i> Sign In
+            </a>
+            <a href="register.html" class="btn-nav btn-nav-primary">
+                <i class="fas fa-gift"></i> Join
+            </a>
+        </div>
+        <button class="hamburger" onclick="toggleMenu()">
+            <i class="fas fa-bars"></i>
+        </button>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Your Pantry</h1>
+            <p>Manage your ingredients and get recipe suggestions</p>
+        </div>
+
+        <div class="pantry-section">
+            <div class="pantry-header">
+                <h2><i class="fas fa-box"></i> Pantry Items</h2>
+                <span class="pantry-count" id="pantryCount">0 ingredients added</span>
+            </div>
+            <div class="pantry-items" id="pantryItems">
+                <span style="color: var(--text-muted); font-size: 14px;">No ingredients added yet</span>
+            </div>
+            <div class="pantry-add">
+                <input type="text" id="pantryInput" placeholder="Add an ingredient (e.g., chicken, tomato)" />
+                <button id="addPantryBtn"><i class="fas fa-plus"></i> Add</button>
+            </div>
+            <div class="pantry-note">
+                ⚡ Scores update as you add. Oil, salt, pepper and water are included automatically.
+            </div>
+        </div>
+
+        <div class="section-header">
+            <h2><i class="fas fa-lightbulb"></i> Suggested Recipes</h2>
+        </div>
+        <div class="recipes-grid" id="suggestedRecipes">
+            <div class="empty-state" style="grid-column: 1/-1; text-align: center; padding: 40px 20px; color: var(--text-muted);">
+                <p>Add ingredients to get recipe suggestions!</p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>pantry®</h3>
+                <p>Discover delicious recipes from around the world.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <a href="index.html">Home</a>
+                <a href="recipes.html">Recipes</a>
+                <a href="pantry.html">Pantry</a>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </div>
+            <div class="footer-section">
+                <h4>Follow Us</h4>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-youtube"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 pantry. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

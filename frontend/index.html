@@ -1103,4 +1103,83 @@
                             <i class="fas fa-arrow-right"></i> View full recipe →
                         </button>
                     </div>
-               
+                </div>
+            `).join('');
+        }
+
+        function renderPantry() {
+            pantryItems.innerHTML = pantry.length === 0
+                ? '<span style="color: var(--text-muted); font-size: 14px;">No ingredients added yet</span>'
+                : pantry.map((item, index) => `<span class="pantry-item">${item}<i class="fas fa-times remove" data-index="${index}"></i></span>`).join('');
+            pantryCount.textContent = `${pantry.length} ingredient${pantry.length === 1 ? '' : 's'} added`;
+        }
+
+        function filterRecipes(query) {
+            const normalizedQuery = query.trim().toLowerCase();
+            const results = normalizedQuery === ''
+                ? sampleRecipes
+                : sampleRecipes.filter(recipe =>
+                    [recipe.title, recipe.cuisine, ...recipe.tags, ...recipe.ingredients]
+                        .some(value => value.toLowerCase().includes(normalizedQuery))
+                );
+            displayRecipes(results);
+        }
+
+        function viewRecipe(recipeId) {
+            const recipe = sampleRecipes.find(item => item.id === recipeId);
+            if (recipe) {
+                alert(`${recipe.title}\n\nIngredients: ${recipe.ingredients.join(', ')}`);
+            }
+        }
+
+        searchBtn.addEventListener('click', () => filterRecipes(searchInput.value));
+        searchInput.addEventListener('keydown', event => {
+            if (event.key === 'Enter') filterRecipes(searchInput.value);
+        });
+
+        quickFilters.addEventListener('click', event => {
+            const filter = event.target.closest('[data-filter]');
+            if (!filter) return;
+            document.querySelectorAll('[data-filter]').forEach(button => button.classList.remove('active'));
+            filter.classList.add('active');
+            filterRecipes(filter.dataset.filter === 'all' ? '' : filter.dataset.filter);
+        });
+
+        addPantryBtn.addEventListener('click', () => {
+            const ingredient = pantryInput.value.trim();
+            if (!ingredient) return;
+            pantry.push(ingredient);
+            pantryInput.value = '';
+            renderPantry();
+        });
+
+        pantryItems.addEventListener('click', event => {
+            const removeButton = event.target.closest('[data-index]');
+            if (!removeButton) return;
+            pantry.splice(Number(removeButton.dataset.index), 1);
+            renderPantry();
+        });
+
+        function openAuth(form) {
+            authModal.classList.add('active');
+            loginForm.style.display = form === 'login' ? 'block' : 'none';
+            registerForm.style.display = form === 'register' ? 'block' : 'none';
+        }
+
+        showLoginBtn.addEventListener('click', event => { event.preventDefault(); openAuth('login'); });
+        showRegisterBtn.addEventListener('click', () => openAuth('register'));
+        showRegisterLink.addEventListener('click', () => openAuth('register'));
+        showLoginLink.addEventListener('click', () => openAuth('login'));
+        closeAuthModal.addEventListener('click', () => authModal.classList.remove('active'));
+        authModal.addEventListener('click', event => {
+            if (event.target === authModal) authModal.classList.remove('active');
+        });
+
+        document.getElementById('acceptCookies').addEventListener('click', () => cookieConsent.remove());
+        document.getElementById('declineCookies').addEventListener('click', () => cookieConsent.remove());
+
+        displayRecipes(sampleRecipes);
+        renderPantry();
+    </script>
+</body>
+</html>
