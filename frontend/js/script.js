@@ -7,7 +7,7 @@
 // CONFIGURATION
 // ============================================
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'https://ai-recipe-finder-7p11.onrender.com/api';
 
 // ============================================
 // STATE MANAGEMENT

@@ -14,7 +14,7 @@ const pool = require('./db/pool');
 // ─── Import routes ───
 const authRoutes = require('./routes/auth');
 const recipeRoutes = require('./routes/recipes');
-const aiRoutes = require('./routes/ai');  // ← STEP 5.3: ADD THIS
+const aiRoutes = require('./routes/ai');
 
 // ─── Create Express app ───
 const app = express();
@@ -27,8 +27,32 @@ const PORT = process.env.PORT || 5000;
 // Security headers
 app.use(helmet());
 
-// Enable CORS (allows frontend to talk to backend)
-app.use(cors());
+// ─── CORS Configuration ───
+// Allows frontend (Netlify) + local dev to talk to this backend
+const allowedOrigins = [
+    'https://ai-recipe-finder-ayush.netlify.app',  // ← Your Netlify URL
+    'http://localhost:5500',                       // ← VS Code Live Server
+    'http://127.0.0.1:5500',                       // ← VS Code Live Server
+    'http://localhost:3000',                       // ← Local backend test
+    'http://localhost:8000'                        // ← Python HTTP server
+];
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests with no origin (mobile apps, Postman, curl)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            console.warn(`⚠️ Blocked by CORS: ${origin}`);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // Parse JSON request bodies
 app.use(express.json());
@@ -46,7 +70,7 @@ app.use('/api/auth', authRoutes);
 // Recipe routes (CRUD operations)
 app.use('/api/recipes', recipeRoutes);
 
-// AI routes (generate recipe, substitute)  ← STEP 5.5: ADD THIS
+// AI routes (generate recipe, substitute)
 app.use('/api/ai', aiRoutes);
 
 // ============================================
@@ -103,6 +127,15 @@ app.get('/api/db-test', async (req, res) => {
 
 app.use((err, req, res, next) => {
     console.error('Error:', err.stack);
+    
+    // Handle CORS errors specifically
+    if (err.message === 'Not allowed by CORS') {
+        return res.status(403).json({
+            success: false,
+            message: 'CORS policy: Origin not allowed'
+        });
+    }
+    
     res.status(500).json({
         success: false,
         message: err.message || 'Internal server error'
@@ -118,6 +151,11 @@ app.listen(PORT, () => {
     console.log('🍳 AI Recipe Finder Server');
     console.log('═══════════════════════════════════════════');
     console.log(`📍 Server running at: http://localhost:${PORT}`);
+    console.log('');
+    console.log('🔐 CORS Allowed Origins:');
+    allowedOrigins.forEach(origin => {
+        console.log(`   ✅ ${origin}`);
+    });
     console.log('');
     console.log('📝 Available Routes:');
     console.log('   ─────────────────────────────────────');
