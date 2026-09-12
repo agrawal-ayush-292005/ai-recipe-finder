@@ -1,6 +1,6 @@
 // ============================================
 // AI RECIPE FINDER - COMPLETE JAVASCRIPT
-// FIXED VERSION - Merges API + Sample Recipes
+// FIXED VERSION - Handles URLs with or without .html
 // ============================================
 
 // ============================================
@@ -201,7 +201,12 @@ const sampleRecipes = [
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🍽️ Pantry App Loading...');
-    console.log('📍 Current page:', window.location.pathname.split('/').pop() || 'index.html');
+    
+    // Get current page name (handles URLs with or without .html)
+    const rawPage = window.location.pathname.split('/').pop() || 'index.html';
+    const page = rawPage.replace('.html', '') || 'index';
+    
+    console.log('📍 Current page:', page);
     console.log('🔐 Auth status:', authToken ? 'Logged In ✅' : 'Logged Out ❌');
 
     // Initialize theme
@@ -209,34 +214,34 @@ document.addEventListener('DOMContentLoaded', function() {
     document.documentElement.setAttribute('data-theme', savedTheme);
 
     // Load content based on page
-    const page = window.location.pathname.split('/').pop() || 'index.html';
-
     switch(page) {
-        case 'index.html':
+        case 'index':
         case '':
             loadHomePage();
             break;
-        case 'recipes.html':
+        case 'recipes':
             loadRecipesPage();
             break;
-        case 'recipe-detail.html':
+        case 'recipe-detail':
             loadRecipeDetail();
             break;
-        case 'pantry.html':
+        case 'pantry':
             loadPantryPage();
             break;
-        case 'login.html':
+        case 'login':
             setupLoginPage();
             break;
-        case 'register.html':
+        case 'register':
             setupRegisterPage();
             break;
-        case 'contact.html':
+        case 'contact':
             setupContactPage();
             break;
-        case 'about.html':
+        case 'about':
             // Nothing special needed
             break;
+        default:
+            console.log('⚠️ Unknown page:', page);
     }
 
     // Setup common elements
@@ -265,7 +270,7 @@ function loadHomePage() {
 }
 
 // ============================================
-// RECIPES PAGE FUNCTIONS (FIXED!)
+// RECIPES PAGE FUNCTIONS
 // ============================================
 
 async function loadRecipesPage() {
@@ -274,13 +279,12 @@ async function loadRecipesPage() {
     const recipesGrid = document.getElementById('recipesGrid');
     if (!recipesGrid) return;
 
-    // Check for search query
     const params = new URLSearchParams(window.location.search);
     const searchQuery = params.get('search');
 
     let allRecipes = [];
 
-    // ─── STEP 1: Try to fetch from API ───
+    // STEP 1: Try to fetch from API
     try {
         const response = await fetch(`${API_URL}/recipes`);
         const data = await response.json();
@@ -293,9 +297,8 @@ async function loadRecipesPage() {
         console.log('⚠️ API not available:', error.message);
     }
 
-    // ─── STEP 2: Merge with sample recipes (avoid duplicates) ───
+    // STEP 2: Merge with sample recipes
     const apiIds = new Set(allRecipes.map(r => r.id));
-
     sampleRecipes.forEach(sample => {
         if (!apiIds.has(sample.id)) {
             allRecipes.push(sample);
@@ -304,46 +307,35 @@ async function loadRecipesPage() {
 
     console.log('📊 Total recipes after merge:', allRecipes.length);
 
-    // ─── STEP 3: Filter by search query ───
+    // STEP 3: Filter by search query
     if (searchQuery) {
         const q = searchQuery.toLowerCase();
         allRecipes = allRecipes.filter(r => {
-            // Check title
             if (r.title && r.title.toLowerCase().includes(q)) return true;
-
-            // Check cuisine
             if (r.cuisine && r.cuisine.toLowerCase().includes(q)) return true;
-
-            // Check ingredients (array or string)
             if (Array.isArray(r.ingredients)) {
                 if (r.ingredients.some(i => i.toLowerCase().includes(q))) return true;
             } else if (typeof r.ingredients === 'string') {
                 if (r.ingredients.toLowerCase().includes(q)) return true;
             }
-
             return false;
         });
         console.log('🔍 Filtered to', allRecipes.length, 'recipes for:', searchQuery);
     }
 
-    // ─── STEP 4: Display ───
     displayRecipes(allRecipes, recipesGrid);
 }
 
 // ============================================
-// RECIPE DETAIL PAGE (FIXED!)
+// RECIPE DETAIL PAGE
 // ============================================
 
 async function loadRecipeDetail() {
-    console.log('═══════════════════════════════════════════');
     console.log('📄 Loading recipe detail page...');
-    console.log('🔗 Full URL:', window.location.href);
-    console.log('═══════════════════════════════════════════');
 
     const container = document.getElementById('recipeDetail');
     if (!container) return;
 
-    // Get ID from URL
     const params = new URLSearchParams(window.location.search);
     const recipeIdParam = params.get('id');
 
@@ -362,7 +354,7 @@ async function loadRecipeDetail() {
 
     let recipe = null;
 
-    // ─── STEP 1: Try API first ───
+    // Try API first
     try {
         const response = await fetch(`${API_URL}/recipes/${recipeIdParam}`);
         const data = await response.json();
@@ -375,7 +367,7 @@ async function loadRecipeDetail() {
         console.log('⚠️ API not available');
     }
 
-    // ─── STEP 2: Fallback to samples ───
+    // Fallback to samples
     if (!recipe) {
         const numericId = parseInt(recipeIdParam);
         if (!isNaN(numericId)) {
@@ -384,7 +376,6 @@ async function loadRecipeDetail() {
         }
     }
 
-    // ─── STEP 3: If still not found ───
     if (!recipe) {
         container.innerHTML = `
             <div class="empty-state">
@@ -396,18 +387,14 @@ async function loadRecipeDetail() {
         return;
     }
 
-    // ─── STEP 4: Display ───
     displayRecipeDetail(recipe, container);
 }
 
 function displayRecipeDetail(recipe, container) {
-    console.log('✅ Displaying:', recipe.title, '| ID:', recipe.id);
-
     const instructions = recipe.instructions
         ? recipe.instructions.split('\n').filter(s => s.trim())
         : [];
 
-    // Handle ingredients that could be string or array
     let ingredientsHtml = '';
     if (Array.isArray(recipe.ingredients)) {
         ingredientsHtml = recipe.ingredients.map(ing => `<li>${ing}</li>`).join('');
@@ -447,9 +434,7 @@ function displayRecipeDetail(recipe, container) {
 
             <div class="detail-section">
                 <h3><i class="fas fa-list"></i> Ingredients</h3>
-                <ul>
-                    ${ingredientsHtml}
-                </ul>
+                <ul>${ingredientsHtml}</ul>
             </div>
 
             <div class="detail-section">
@@ -570,7 +555,6 @@ async function updateSuggestedRecipes() {
 
     let allRecipes = [];
 
-    // ─── STEP 1: Fetch recipes from API ───
     try {
         const response = await fetch(`${API_URL}/recipes`);
         const data = await response.json();
@@ -581,7 +565,6 @@ async function updateSuggestedRecipes() {
         console.log('⚠️ API not available');
     }
 
-    // ─── STEP 2: Add samples ───
     const apiIds = new Set(allRecipes.map(r => r.id));
     sampleRecipes.forEach(sample => {
         if (!apiIds.has(sample.id)) {
@@ -589,7 +572,6 @@ async function updateSuggestedRecipes() {
         }
     });
 
-    // ─── STEP 3: Filter by pantry ───
     const suggested = allRecipes.filter(recipe => {
         let recipeIngredients = [];
         if (Array.isArray(recipe.ingredients)) {
@@ -606,7 +588,6 @@ async function updateSuggestedRecipes() {
         );
     });
 
-    // ─── STEP 4: Display ───
     if (suggested.length === 0) {
         container.innerHTML = `
             <div class="empty-state" style="grid-column: 1/-1;">
@@ -620,7 +601,7 @@ async function updateSuggestedRecipes() {
 }
 
 // ============================================
-// DISPLAY RECIPES (Main Function)
+// DISPLAY RECIPES
 // ============================================
 
 function displayRecipes(recipes, container) {
@@ -707,7 +688,12 @@ function setupLoginPage() {
     console.log('🔐 Setting up login page...');
 
     const form = document.getElementById('loginForm');
-    if (!form) return;
+    if (!form) {
+        console.log('❌ loginForm not found');
+        return;
+    }
+
+    console.log('✅ Login form found, attaching handler');
 
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -761,10 +747,16 @@ function setupRegisterPage() {
     console.log('📝 Setting up register page...');
 
     const form = document.getElementById('registerForm');
-    if (!form) return;
+    if (!form) {
+        console.log('❌ registerForm not found');
+        return;
+    }
+
+    console.log('✅ Register form found, attaching handler');
 
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
+        console.log('📝 Register form submitted');
 
         const username = document.getElementById('registerUsername').value.trim();
         const email = document.getElementById('registerEmail').value.trim();
@@ -793,6 +785,7 @@ function setupRegisterPage() {
             });
 
             const data = await response.json();
+            console.log('📥 Register response:', data);
 
             if (response.ok) {
                 showMessage(message, '✅ Account created! Redirecting to login...', 'success');
@@ -803,6 +796,7 @@ function setupRegisterPage() {
                 showMessage(message, data.message || 'Registration failed', 'error');
             }
         } catch (error) {
+            console.log('❌ Register error:', error);
             showMessage(message, 'Network error. Is the server running?', 'error');
         } finally {
             btn.disabled = false;
@@ -937,359 +931,4 @@ function setupAI() {
     }
 }
 
-async function generateAIRecipe() {
-    console.log('🤖 Generate button clicked');
-
-    const aiIngredients = document.getElementById('aiIngredients');
-    const aiCuisine = document.getElementById('aiCuisine');
-    const generateBtn = document.getElementById('generateAIRecipeBtn');
-    const aiLoading = document.getElementById('aiLoading');
-    const aiResult = document.getElementById('aiResult');
-
-    if (!aiIngredients || !generateBtn) return;
-
-    const ingredients = aiIngredients.value.trim();
-    const cuisine = aiCuisine ? aiCuisine.value : '';
-
-    if (!ingredients) {
-        showToast('Please enter some ingredients! 🍽️', 'warning');
-        aiIngredients.focus();
-        return;
-    }
-
-    if (ingredients.length < 3) {
-        showToast('Please enter valid ingredients', 'warning');
-        return;
-    }
-
-    if (!authToken) {
-        showToast('Please login to use AI features! 🔐', 'error');
-        setTimeout(() => {
-            window.location.href = 'login.html';
-        }, 1500);
-        return;
-    }
-
-    aiLoading.style.display = 'block';
-    aiResult.style.display = 'none';
-    generateBtn.disabled = true;
-    generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
-
-    try {
-        console.log('📤 Sending request to backend...');
-
-        const response = await fetch(`${API_URL}/ai/generate-recipe`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`
-            },
-            body: JSON.stringify({
-                ingredients: ingredients,
-                cuisine: cuisine
-            })
-        });
-
-        const data = await response.json();
-        console.log('📥 Response received:', data);
-
-        if (response.ok && data.success) {
-            currentAIRecipe = data.recipe;
-            displayAIRecipe(data.recipe);
-            showToast('✅ Recipe generated successfully!', 'success');
-        } else {
-            if (response.status === 401) {
-                showToast('Session expired. Please login again.', 'error');
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                setTimeout(() => {
-                    window.location.href = 'login.html';
-                }, 1500);
-            } else {
-                showToast(data.message || 'Failed to generate recipe', 'error');
-            }
-        }
-
-    } catch (error) {
-        console.error('❌ AI Error:', error);
-        showToast('Network error. Is the server running?', 'error');
-    } finally {
-        aiLoading.style.display = 'none';
-        generateBtn.disabled = false;
-        generateBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Generate Recipe';
-    }
-}
-
-function displayAIRecipe(recipe) {
-    console.log('🎨 Displaying AI recipe:', recipe.name);
-
-    const aiResult = document.getElementById('aiResult');
-    if (!aiResult) return;
-
-    aiResult.style.display = 'block';
-
-    const instructions = recipe.instructions
-        ? recipe.instructions.split('\n').filter(s => s.trim())
-        : [];
-
-    aiResult.innerHTML = `
-        <div class="ai-recipe-header">
-            <div>
-                <h3 class="ai-recipe-name">${recipe.name || 'Delicious Recipe'}</h3>
-                <div class="ai-recipe-meta">
-                    ${recipe.difficulty ? `<span>⭐ ${recipe.difficulty}</span>` : ''}
-                    ${recipe.prep_time ? `<span>⏱️ Prep: ${recipe.prep_time}m</span>` : ''}
-                    ${recipe.cook_time ? `<span>🍳 Cook: ${recipe.cook_time}m</span>` : ''}
-                    ${recipe.servings ? `<span>👥 ${recipe.servings} servings</span>` : ''}
-                    ${recipe.calories ? `<span>🔥 ${recipe.calories} cal</span>` : ''}
-                    ${recipe.cuisine ? `<span>🌍 ${recipe.cuisine}</span>` : ''}
-                </div>
-            </div>
-            <div class="ai-result-actions">
-                <button class="btn-save-ai" onclick="saveAIRecipe()">
-                    <i class="fas fa-save"></i> Save Recipe
-                </button>
-                <button class="btn-regenerate-ai" onclick="regenerateAIRecipe()">
-                    <i class="fas fa-redo"></i> Regenerate
-                </button>
-            </div>
-        </div>
-
-        ${recipe.description ? `<p class="ai-description">${recipe.description}</p>` : ''}
-
-        <div class="ai-section-block">
-            <h4><i class="fas fa-list"></i> Ingredients</h4>
-            <ul class="ai-ingredients-list">
-                ${recipe.ingredients && Array.isArray(recipe.ingredients)
-                    ? recipe.ingredients.map(ing => `
-                        <li>
-                            <strong>${ing.name || ing}</strong>
-                            ${ing.quantity ? ` - ${ing.quantity} ${ing.unit || ''}` : ''}
-                        </li>
-                    `).join('')
-                    : '<li>No ingredients listed</li>'
-                }
-            </ul>
-        </div>
-
-        <div class="ai-section-block">
-            <h4><i class="fas fa-list-ol"></i> Instructions</h4>
-            <ol class="ai-instructions-list">
-                ${instructions.length > 0
-                    ? instructions.map(step => `
-                        <li>${step.trim().replace(/^\d+\.\s*/, '')}</li>
-                    `).join('')
-                    : '<li>No instructions available</li>'
-                }
-            </ol>
-        </div>
-
-        ${recipe.tips ? `
-            <div class="ai-tips">
-                <strong>💡 Pro Tip:</strong>
-                <span>${recipe.tips}</span>
-            </div>
-        ` : ''}
-    `;
-
-    aiResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-async function saveAIRecipe() {
-    console.log('💾 Saving AI recipe...');
-
-    if (!currentAIRecipe) {
-        showToast('No recipe to save!', 'warning');
-        return;
-    }
-
-    if (!authToken) {
-        showToast('Please login to save recipes', 'error');
-        return;
-    }
-
-    const saveBtn = document.querySelector('.btn-save-ai');
-    if (saveBtn) {
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-    }
-
-    const ingredients = currentAIRecipe.ingredients
-        .map(ing => typeof ing === 'string' ? ing : ing.name)
-        .join(', ');
-
-    try {
-        const response = await fetch(`${API_URL}/recipes`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`
-            },
-            body: JSON.stringify({
-                title: currentAIRecipe.name,
-                description: currentAIRecipe.description,
-                ingredients: ingredients,
-                instructions: currentAIRecipe.instructions,
-                prep_time: currentAIRecipe.prep_time || null,
-                cook_time: currentAIRecipe.cook_time || null,
-                servings: currentAIRecipe.servings || null,
-                difficulty: currentAIRecipe.difficulty || 'Medium'
-            })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            showToast('✅ Recipe saved to your collection!', 'success');
-
-            if (saveBtn) {
-                saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved!';
-                saveBtn.style.background = 'var(--success-dark)';
-
-                setTimeout(() => {
-                    saveBtn.disabled = false;
-                    saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Recipe';
-                    saveBtn.style.background = '';
-                }, 3000);
-            }
-        } else {
-            showToast(data.message || 'Failed to save recipe', 'error');
-            if (saveBtn) {
-                saveBtn.disabled = false;
-                saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Recipe';
-            }
-        }
-
-    } catch (error) {
-        console.error('Save error:', error);
-        showToast('Network error. Please try again.', 'error');
-        if (saveBtn) {
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Recipe';
-        }
-    }
-}
-
-function regenerateAIRecipe() {
-    console.log('🔄 Regenerating...');
-
-    const aiIngredients = document.getElementById('aiIngredients');
-    if (aiIngredients && aiIngredients.value.trim()) {
-        generateAIRecipe();
-    } else {
-        showToast('Please enter ingredients first', 'warning');
-    }
-}
-
-// ============================================
-// TOAST NOTIFICATIONS
-// ============================================
-
-function showToast(message, type = 'info') {
-    document.querySelectorAll('.toast').forEach(t => t.remove());
-
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-
-    const icons = {
-        success: '✅',
-        error: '❌',
-        warning: '⚠️',
-        info: 'ℹ️'
-    };
-
-    toast.innerHTML = `
-        <span>${icons[type] || 'ℹ️'}</span>
-        <span>${message}</span>
-    `;
-
-    document.body.appendChild(toast);
-
-    setTimeout(() => {
-        toast.style.animation = 'slideInRight 0.3s reverse';
-        setTimeout(() => toast.remove(), 300);
-    }, 4000);
-}
-
-// ============================================
-// COOKIE CONSENT
-// ============================================
-
-function setupCookieConsent() {
-    const cookieConsent = document.getElementById('cookieConsent');
-    if (!cookieConsent) return;
-
-    if (localStorage.getItem('cookiesAccepted')) {
-        cookieConsent.style.display = 'none';
-        return;
-    }
-
-    cookieConsent.style.display = 'flex';
-
-    const acceptBtn = document.getElementById('acceptCookies');
-    if (acceptBtn) {
-        acceptBtn.addEventListener('click', () => {
-            localStorage.setItem('cookiesAccepted', 'true');
-            cookieConsent.style.display = 'none';
-            showToast('Cookies accepted!', 'success');
-        });
-    }
-
-    const declineBtn = document.getElementById('declineCookies');
-    if (declineBtn) {
-        declineBtn.addEventListener('click', () => {
-            cookieConsent.style.display = 'none';
-        });
-    }
-}
-
-// ============================================
-// CONTACT FORM
-// ============================================
-
-function setupContactPage() {
-    const form = document.getElementById('contactForm');
-    if (!form) return;
-
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        showToast('✅ Thank you for your message! We\'ll get back to you soon.', 'success');
-        this.reset();
-    });
-}
-
-// ============================================
-// UTILITY FUNCTIONS
-// ============================================
-
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-function logoutUser() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    authToken = null;
-    currentUser = null;
-    showToast('Logged out successfully', 'info');
-    setTimeout(() => {
-        window.location.href = 'index.html';
-    }, 500);
-}
-
-// Make functions global for onclick handlers
-window.removePantryItem = removePantryItem;
-window.saveAIRecipe = saveAIRecipe;
-window.regenerateAIRecipe = regenerateAIRecipe;
-window.logoutUser = logoutUser;
-
-// ============================================
-// CONSOLE LOG
-// ============================================
-
-console.log('📦 Pantry App - JavaScript Loaded');
-console.log('🔗 API URL:', API_URL);
-console.log('🤖 AI features ready');
+async
