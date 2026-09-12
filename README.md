@@ -1,83 +1,80 @@
-markdown
 # 🍳 AI Recipe Finder
 
-An intelligent recipe discovery application with AI-powered recommendations.
+An intelligent full-stack recipe app powered by Google Gemini AI.
+
+![Node.js](https://img.shields.io/badge/Node.js-18.x-green.svg)
+![Express](https://img.shields.io/badge/Express-4.18.x-blue.svg)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15.x-blue.svg)
+![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 ---
 
-## 📅 Development Progress
+## ✨ Features
 
-### ✅ Day 1: Project Setup & Server Foundation
-**Date:** August 19, 2026
+- 🔐 **Auth** - JWT + bcrypt
+- 🤖 **AI Recipes** - Generate recipes using Google Gemini
+- 🔍 **Search** - Search by title, ingredients, cuisine
+- 🥘 **Pantry** - Track ingredients and get suggestions
+- ⭐ **Save Recipes** - Store AI recipes to your collection
+- 🌓 **Dark Mode** - Light/dark theme toggle
+- 📱 **Responsive** - Works on all devices
 
-#### What Was Built:
-- [x] Node.js + Express server initialized
-- [x] PostgreSQL database connected
-- [x] Environment variables configured
-- [x] CORS enabled for cross-origin requests
-- [x] Basic API endpoints created
-- [x] Database connection test endpoint
-- [x] GitHub repository initialized
+---
 
-#### Tech Stack Implemented:
-- **Backend:** Node.js, Express.js
-- **Database:** PostgreSQL with pg client
-- **Tools:** nodemon, dotenv, cors
+## 🛠️ Tech Stack
 
-#### File Structure:
+| Backend | Frontend | Database |
+|---------|----------|----------|
+| Node.js | HTML5 | PostgreSQL |
+| Express.js | CSS3 | pg |
+| bcrypt | JavaScript | |
+| JWT | Font Awesome | |
+| @google/genai | | |
+
+---
+
+## 📁 Structure
 ai-recipe-finder/
 ├── backend/
-│ ├── server.js # Main Express server
-│ ├── db/
-│ │ └── pool.js # PostgreSQL connection
-│ ├── .env # Environment variables
-│ └── package.json # Backend dependencies
+│ ├── server.js
+│ ├── db/pool.js
+│ ├── middleware/auth.js
+│ └── routes/
+│ ├── auth.js
+│ ├── recipes.js
+│ └── ai.js
 ├── frontend/
-│ └── index.html # Static frontend
-├── .gitignore
-└── README.md
+│ ├── index.html
+│ ├── recipes.html
+│ ├── recipe-detail.html
+│ ├── login.html
+│ ├── register.html
+│ ├── about.html
+│ ├── contact.html
+│ ├── pantry.html
+│ ├── css/style.css
+│ └── js/script.js
+└── database/schema.sql
 
 text
 
-#### API Endpoints Created:
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/` | API health check |
-| GET | `/api/test` | Test endpoint |
-| GET | `/api/db-test` | Database connection test |
+---
 
-#### Database Schema:
-```sql
-CREATE TABLE test (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-🚀 Getting Started
-Prerequisites
-Node.js (v18+)
+## 🚀 Setup
 
-PostgreSQL (v15+)
-
-npm (v8+)
-
-Installation
-bash
-# Clone the repository
-git clone https://github.com/yourusername/ai-recipe-finder.git
-cd ai-recipe-finder
-
-# Install dependencies
-cd backend
+### 1. Clone & Install
+```bash
+git clone https://github.com/agrawal-ayush-292005/ai-recipe-finder.git
+cd ai-recipe-finder/backend
 npm install
-
-# Set up environment
-cp .env.example .env
-# Edit .env with your database credentials
-
-# Start the server
-npm run dev
-Environment Variables (.env)
+2. Setup Database
+bash
+psql -U postgres
+CREATE DATABASE ai_recipe_finder;
+\c ai_recipe_finder
+\i database/schema.sql
+\q
+3. Configure .env
 env
 PORT=3000
 DB_HOST=localhost
@@ -85,57 +82,109 @@ DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=root
 DB_NAME=ai_recipe_finder
-Test the API
+JWT_SECRET=your_secret_key
+GEMINI_API_KEY=your_gemini_key
+4. Get Gemini API Key (FREE)
+👉 aistudio.google.com → Get API Key
+
+5. Start Server
 bash
-# Test database connection
-curl http://localhost:3000/api/db-test
+npm run dev
+Server runs at http://localhost:3000
 
-# Test API
-curl http://localhost:3000/api/test
-   
+6. Open Frontend
+Open frontend/index.html in browser.
 
+📚 API Endpoints
+Auth
+Method	Endpoint	Auth
+POST	/api/auth/register	❌
+POST	/api/auth/login	❌
+GET	/api/auth/profile	✅
+Recipes
+Method	Endpoint	Auth
+GET	/api/recipes	❌
+GET	/api/recipes/:id	❌
+POST	/api/recipes	✅
+PUT	/api/recipes/:id	✅
+DELETE	/api/recipes/:id	✅
+AI
+Method	Endpoint	Auth
+POST	/api/ai/generate-recipe	✅
+POST	/api/ai/substitute	✅
+🧪 Quick Test
+bash
+# Health check
+curl http://localhost:3000/api/health
 
-   ## 📅 Day 2 - Database Setup
+# Register
+curl -X POST http://localhost:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"test","email":"test@email.com","password":"password123"}'
 
-**Date:** August 20, 2026
+# Login
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@email.com","password":"password123"}'
+📅 Progress
+✅ Day 1 - Project Setup
 
-### ✅ What I Did Today
+✅ Day 2 - Database Schema
 
-1. **Set up PostgreSQL**
-   - Installed PostgreSQL on my computer
-   - Created database: `ai_recipe_finder`
-   - Connected to database successfully
+✅ Day 3 - Authentication
 
-2. **Created Database Tables**
-   - `users` - Stores user accounts
-   - `recipes` - Stores recipe information
-   - `favorites` - Stores saved recipes
-   - `search_history` - Stores user searches
+✅ Day 4 - Recipe CRUD
 
-3. **Connected Node.js to PostgreSQL**
-   - Created `db/pool.js` for database connection
-   - Added `/api/db-test` endpoint to test connection
-   - Fixed server errors
+✅ Day 5 - Frontend (8 pages)
 
-### 📁 Files Created
-backend/
-├── db/
-│ └── pool.js ← Database connection
-└── server.js ← Updated with DB routes
+✅ Day 6 - AI Integration (Gemini)
+
+✅ Day 7 - Bug Fixes & Integration
+
+👨‍💻 Author
+Ayush Agrawal
+
+GitHub: @agrawal-ayush-292005
+
+LinkedIn: ayush-agrawal-7b6a94329
+
+Email: ayushagrawal0931@gmail.com
+
+Phone: +91 85285 12005
+
+Location: Gorakhpur, UP, India
+
+📝 License
+MIT License
+
+🙏 Acknowledgments
+Google Gemini AI
+
+PostgreSQL
+
+Express.js
+
+bcrypt
+
+JWT
+
+Built with ❤️ by Ayush Agrawal | Made in India 🇮🇳
+
+© 2026 Pantry®
 
 text
 
-### 🧪 Testing
+---
 
-| Test | Result |
-|------|--------|
-| Server Running | ✅ Passed |
-| Database Connected | ✅ Passed |
-| API Working | ✅ Passed |
+## ✅ HOW TO USE
 
-### 💡 What I Learned
-
-- How to set up PostgreSQL
-- How to create database tables
-- How to connect Node.js to PostgreSQL
-- How to test database connectio
+1. Open `README.md`
+2. Select All (`Ctrl+A`)
+3. Delete
+4. Paste this
+5. Save (`Ctrl+S`)
+6. Push:
+```bash
+git add README.md
+git commit -m "Short clean README"
+git push origin main
