@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pantry - Recipe Detail</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="index.html">
+                <span class="logo-icon">🥘</span>
+                <h1>pantry<span>®</span></h1>
+            </a>
+        </div>
+        <div class="nav-links" id="navLinks">
+            <a href="index.html">Home</a>
+            <a href="recipes.html" class="active">Browse</a>
+            <a href="pantry.html">Your Pantry</a>
+            <a href="about.html">About</a>
+            <a href="login.html" class="btn-nav btn-nav-secondary">
+                <i class="fas fa-user"></i> Sign In
+            </a>
+            <a href="register.html" class="btn-nav btn-nav-primary">
+                <i class="fas fa-gift"></i> Join for Rewards
+            </a>
+        </div>
+        <div class="hamburger" onclick="toggleMenu()">
+            <i class="fas fa-bars"></i>
+        </div>
+    </nav>
+
+    <!-- RECIPE DETAIL -->
+    <div class="container">
+        <div id="recipeDetail">
+            <!-- Recipe loaded by JavaScript -->
+        </div>
+    </div>
+
+    <!-- COOKIE CONSENT -->
+    <div class="cookie-consent" id="cookieConsent">
+        <p>🍪 We use cookies to personalize ads and improve your experience. By using this site, you agree to our use of cookies.</p>
+        <div class="cookie-btns">
+            <button class="btn-decline" id="declineCookies">Decline</button>
+            <button class="btn-accept" id="acceptCookies">Accept</button>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>pantry®</h3>
+                <p>Discover delicious recipes from around the world.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <a href="index.html">Home</a>
+                <a href="recipes.html">Recipes</a>
+                <a href="pantry.html">Pantry</a>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </div>
+            <div class="footer-section">
+                <h4>Follow Us</h4>
+                <a href="#"><i class="fab fa-facebook"></i> Facebook</a>
+                <a href="#"><i class="fab fa-instagram"></i> Instagram</a>
+                <a href="#"><i class="fab fa-twitter"></i> Twitter</a>
+                <a href="#"><i class="fab fa-youtube"></i> YouTube</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 pantry. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

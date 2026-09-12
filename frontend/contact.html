@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pantry - Contact</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="index.html">
+                <span class="logo-icon">🥘</span>
+                <h1>pantry<span>®</span></h1>
+            </a>
+        </div>
+        <div class="nav-links" id="navLinks">
+            <a href="index.html">Home</a>
+            <a href="recipes.html">Browse</a>
+            <a href="pantry.html">Your Pantry</a>
+            <a href="about.html">About</a>
+            <a href="contact.html" class="active">Contact</a>
+            <a href="login.html" class="btn-nav btn-nav-secondary">
+                <i class="fas fa-user"></i> Sign In
+            </a>
+            <a href="register.html" class="btn-nav btn-nav-primary">
+                <i class="fas fa-gift"></i> Join for Rewards
+            </a>
+        </div>
+        <div class="hamburger" onclick="toggleMenu()">
+            <i class="fas fa-bars"></i>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Contact Us</h1>
+            <p>We'd love to hear from you!</p>
+        </div>
+        <div class="contact-content">
+            <!-- Contact Info -->
+            <div class="contact-info">
+                <h3>Get in Touch</h3>
+                <p>Have a question, suggestion, or feedback? Reach out to us!</p>
+
+                <div class="contact-item">
+                    <i class="fas fa-envelope"></i>
+                    <div>
+                        <strong>Email</strong>
+                        <p><a href="mailto:ayushagrawal0931@gmail.com" style="color: inherit; text-decoration: none;">ayushagrawal0931@gmail.com</a></p>
+                    </div>
+                </div>
+
+                <div class="contact-item">
+                    <i class="fas fa-phone"></i>
+                    <div>
+                        <strong>Phone</strong>
+                        <p><a href="tel:+918528512005" style="color: inherit; text-decoration: none;">+91 85285 12005</a></p>
+                    </div>
+                </div>
+
+                <div class="contact-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <div>
+                        <strong>Address</strong>
+                        <p>Gorakhpur, Uttar Pradesh<br>India</p>
+                    </div>
+                </div>
+
+                <div class="contact-item">
+                    <i class="fas fa-user-tie"></i>
+                    <div>
+                        <strong>Founder</strong>
+                        <p>Ayush Agrawal</p>
+                    </div>
+                </div>
+
+                <!-- Social Links -->
+                <div style="margin-top: 24px;">
+                    <h3>Follow Us</h3>
+                    <div class="social-links" style="margin-top: 12px;">
+                        <a href="https://twitter.com/ayushagraw2005" target="_blank" rel="noopener" aria-label="Twitter" title="Twitter">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="https://instagram.com/agrawalayush_29" target="_blank" rel="noopener" aria-label="Instagram" title="Instagram">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="https://www.linkedin.com/in/ayush-agrawal-7b6a94329" target="_blank" rel="noopener" aria-label="LinkedIn" title="LinkedIn">
+                            <i class="fab fa-linkedin-in"></i>
+                        </a>
+                        <a href="https://github.com/agrawal-ayush-292005" target="_blank" rel="noopener" aria-label="GitHub" title="GitHub">
+                            <i class="fab fa-github"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Form -->
+            <div class="contact-form">
+                <h3>Send a Message</h3>
+                <form id="contactForm">
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Your Name</label>
+                        <input type="text" id="contactName" placeholder="John Doe" required />
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-envelope"></i> Your Email</label>
+                        <input type="email" id="contactEmail" placeholder="john@example.com" required />
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-tag"></i> Subject</label>
+                        <input type="text" id="contactSubject" placeholder="Subject" required />
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-comment"></i> Message</label>
+                        <textarea id="contactMessage" placeholder="Your message..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn-submit">Send Message</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="footer-content">
+            <!-- Column 1: Brand + Social -->
+            <div class="footer-section footer-brand">
+                <div class="footer-logo">
+                    <span class="logo-icon">🥘</span>
+                    <h3>pantry<span>®</span></h3>
+                </div>
+                <p>Discover delicious recipes from around the world using ingredients you already have. AI-powered cooking made simple.</p>
+                <div class="social-links">
+                    <a href="https://twitter.com/ayushagraw2005" target="_blank" rel="noopener" aria-label="Twitter" title="Twitter">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="https://instagram.com/agrawalayush_29" target="_blank" rel="noopener" aria-label="Instagram" title="Instagram">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="https://www.linkedin.com/in/ayush-agrawal-7b6a94329" target="_blank" rel="noopener" aria-label="LinkedIn" title="LinkedIn">
+                        <i class="fab fa-linkedin-in"></i>
+                    </a>
+                    <a href="https://github.com/agrawal-ayush-292005" target="_blank" rel="noopener" aria-label="GitHub" title="GitHub">
+                        <i class="fab fa-github"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Column 2: Quick Links -->
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <a href="index.html"><i class="fas fa-chevron-right"></i> Home</a>
+                <a href="recipes.html"><i class="fas fa-chevron-right"></i> Browse Recipes</a>
+                <a href="pantry.html"><i class="fas fa-chevron-right"></i> Your Pantry</a>
+                <a href="about.html"><i class="fas fa-chevron-right"></i> About Us</a>
+                <a href="contact.html"><i class="fas fa-chevron-right"></i> Contact</a>
+            </div>
+
+            <!-- Column 3: Contact Info -->
+            <div class="footer-section">
+                <h4>Contact Us</h4>
+                <div class="contact-item">
+                    <i class="fas fa-envelope"></i>
+                    <div>
+                        <strong>Email</strong>
+                        <a href="mailto:ayushagrawal0931@gmail.com">ayushagrawal0931@gmail.com</a>
+                    </div>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-phone-alt"></i>
+                    <div>
+                        <strong>Phone</strong>
+                        <a href="tel:+918528512005">+91 85285 12005</a>
+                    </div>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <div>
+                        <strong>Address</strong>
+                        <p>Gorakhpur, Uttar Pradesh<br>India</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Column 4: About Founder -->
+            <div class="footer-section">
+                <h4>About Founder</h4>
+                <div class="contact-item">
+                    <i class="fas fa-user-tie"></i>
+                    <div>
+                        <strong>Ayush Agrawal</strong>
+                        <p>Full-Stack Developer & AI Enthusiast</p>
+                    </div>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-code"></i>
+                    <div>
+                        <strong>Tech Stack</strong>
+                        <p>Node.js • Express • PostgreSQL • Gemini AI</p>
+                    </div>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-heart"></i>
+                    <div>
+                        <strong>Made with Love</strong>
+                        <p>In India 🇮🇳</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Bottom -->
+        <div class="footer-bottom">
+            <div class="footer-bottom-content">
+                <p>&copy; 2026 <strong>pantry®</strong>. All rights reserved. Made with ❤️ by Ayush Agrawal</p>
+                <div class="footer-bottom-links">
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                    <a href="#">Cookies</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

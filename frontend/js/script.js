@@ -1,744 +1,215 @@
 // ============================================
-// APP CONFIGURATION
+// AI RECIPE FINDER - COMPLETE JAVASCRIPT
+// FIXED VERSION - Merges API + Sample Recipes
 // ============================================
-const APP_CONFIG = {
-    name: 'Pantry',
-    version: '2.0.0',
-    apiUrl: 'http://localhost:3000/api',
-    debug: true,
-    pagination: 12,
-    cacheDuration: 3600000, // 1 hour
-};
+
+// ============================================
+// CONFIGURATION
+// ============================================
+
+const API_URL = 'http://localhost:3000/api';
 
 // ============================================
 // STATE MANAGEMENT
 // ============================================
-class AppState {
-    constructor() {
-        this.state = {
-            theme: localStorage.getItem('theme') || 'light',
-            user: JSON.parse(localStorage.getItem('user')) || null,
-            token: localStorage.getItem('token') || null,
-            pantry: JSON.parse(localStorage.getItem('pantry')) || [],
-            favorites: JSON.parse(localStorage.getItem('favorites')) || [],
-            recipes: [],
-            loading: false,
-            error: null,
-        };
-        this.listeners = [];
-    }
 
-    get(key) {
-        return this.state[key];
-    }
-
-    set(key, value) {
-        this.state[key] = value;
-        this.notify(key, value);
-        return this;
-    }
-
-    subscribe(callback) {
-        this.listeners.push(callback);
-        return () => {
-            this.listeners = this.listeners.filter(l => l !== callback);
-        };
-    }
-
-    notify(key, value) {
-        this.listeners.forEach(listener => {
-            try {
-                listener(key, value);
-            } catch (error) {
-                console.error('State listener error:', error);
-            }
-        });
-    }
-
-    persist(key) {
-        const value = this.state[key];
-        localStorage.setItem(key, JSON.stringify(value));
-        return this;
-    }
-
-    load(key) {
-        const value = localStorage.getItem(key);
-        if (value) {
-            try {
-                this.state[key] = JSON.parse(value);
-            } catch (error) {
-                this.state[key] = value;
-            }
-        }
-        return this;
-    }
-}
-
-const appState = new AppState();
+let authToken = localStorage.getItem('token') || null;
+let currentUser = JSON.parse(localStorage.getItem('user')) || null;
+let pantry = JSON.parse(localStorage.getItem('pantry')) || [];
+let currentAIRecipe = null;
 
 // ============================================
-// THEME MANAGER
+// SAMPLE INDIAN RECIPES DATA (Fallback)
 // ============================================
-class ThemeManager {
-    constructor() {
-        this.currentTheme = appState.get('theme');
-        this.init();
+
+const sampleRecipes = [
+    {
+        id: 1,
+        title: 'Butter Chicken',
+        source: 'authenticindianrecipes.com',
+        cuisine: 'Indian',
+        image: '🍛',
+        tags: ['North Indian', 'Non-Veg', 'Popular'],
+        ingredients: ['Chicken (500g)', 'Butter (50g)', 'Tomato Puree (2 cups)', 'Heavy Cream (1/2 cup)', 'Ginger-Garlic Paste', 'Red Chili Powder', 'Garam Masala', 'Kasuri Methi'],
+        instructions: '1. Marinate chicken with ginger-garlic paste, chili powder, and salt for 30 minutes.\n2. Heat butter in a pan and cook the marinated chicken until golden brown.\n3. Add tomato puree and cook for 10 minutes.\n4. Add garam masala and sugar, simmer for 15 minutes.\n5. Stir in heavy cream and kasuri methi.\n6. Cook for 5 more minutes.\n7. Garnish with fresh coriander and serve hot.',
+        prep_time: 20,
+        cook_time: 35,
+        servings: 4,
+        difficulty: 'Medium',
+        rating: 4.9,
+        reviews: 156,
+        calories: 450
+    },
+    {
+        id: 2,
+        title: 'Chicken Biryani',
+        source: 'biryaniwala.com',
+        cuisine: 'Indian',
+        image: '🍚',
+        tags: ['Hyderabadi', 'Non-Veg', 'Festival'],
+        ingredients: ['Chicken (1 kg)', 'Basmati Rice (2 cups)', 'Onions (3 large)', 'Yogurt (1 cup)', 'Ginger-Garlic Paste', 'Biryani Masala', 'Saffron', 'Mint Leaves'],
+        instructions: '1. Marinate chicken with yogurt, ginger-garlic paste, and biryani masala for 2 hours.\n2. Soak rice for 30 minutes, then boil until 70% cooked.\n3. Fry onions until golden brown.\n4. Layer the marinated chicken, rice, fried onions, mint, and coriander.\n5. Add saffron soaked in milk.\n6. Seal the pot and cook on low flame for 20 minutes.\n7. Let it rest for 10 minutes before serving.',
+        prep_time: 30,
+        cook_time: 40,
+        servings: 6,
+        difficulty: 'Hard',
+        rating: 4.8,
+        reviews: 203,
+        calories: 550
+    },
+    {
+        id: 3,
+        title: 'Dal Makhani',
+        source: 'punjabirecipes.com',
+        cuisine: 'Indian',
+        image: '🥘',
+        tags: ['Punjabi', 'Vegetarian', 'Popular'],
+        ingredients: ['Whole Black Lentils (1 cup)', 'Kidney Beans (1/4 cup)', 'Butter (4 tbsp)', 'Cream (1/2 cup)', 'Tomato Puree (1 cup)', 'Ginger-Garlic Paste', 'Garam Masala'],
+        instructions: '1. Soak lentils and kidney beans overnight.\n2. Pressure cook until soft and mushy.\n3. Heat butter and sauté ginger-garlic paste.\n4. Add tomato puree and cook for 5 minutes.\n5. Add the cooked lentils and beans.\n6. Simmer for 30 minutes on low heat.\n7. Add cream and garam masala.\n8. Cook for 10 more minutes.',
+        prep_time: 15,
+        cook_time: 45,
+        servings: 4,
+        difficulty: 'Easy',
+        rating: 4.7,
+        reviews: 189,
+        calories: 380
+    },
+    {
+        id: 4,
+        title: 'Chole Bhature',
+        source: 'delhistreetfood.com',
+        cuisine: 'Indian',
+        image: '🫓',
+        tags: ['North Indian', 'Vegetarian', 'Street Food'],
+        ingredients: ['Chickpeas (2 cups)', 'Onions (2 large)', 'Tomatoes (2 medium)', 'Ginger-Garlic Paste', 'Chole Masala', 'Tea Bags (for color)'],
+        instructions: '1. Soak chickpeas overnight with tea bags for color.\n2. Pressure cook chickpeas until soft.\n3. Sauté onions, ginger-garlic paste.\n4. Add tomatoes and cook until soft.\n5. Add chole masala and salt.\n6. Add cooked chickpeas and simmer for 20 minutes.\n7. Serve hot with bhature.',
+        prep_time: 20,
+        cook_time: 35,
+        servings: 4,
+        difficulty: 'Medium',
+        rating: 4.6,
+        reviews: 134,
+        calories: 520
+    },
+    {
+        id: 5,
+        title: 'Chicken Tikka Masala',
+        source: 'indianfoodforever.com',
+        cuisine: 'Indian',
+        image: '🍲',
+        tags: ['North Indian', 'Non-Veg', 'Popular'],
+        ingredients: ['Chicken (500g)', 'Yogurt (1 cup)', 'Tikka Masala (2 tbsp)', 'Tomato Puree (1.5 cups)', 'Heavy Cream (1/2 cup)', 'Butter (2 tbsp)'],
+        instructions: '1. Marinate chicken with yogurt and tikka masala for 2 hours.\n2. Grill or bake until charred.\n3. Heat butter and sauté ginger-garlic paste.\n4. Add tomato puree and cook for 8-10 minutes.\n5. Add the grilled chicken pieces.\n6. Simmer for 15 minutes.\n7. Add cream and cook for 5 minutes.',
+        prep_time: 25,
+        cook_time: 30,
+        servings: 4,
+        difficulty: 'Medium',
+        rating: 4.8,
+        reviews: 178,
+        calories: 480
+    },
+    {
+        id: 6,
+        title: 'Palak Paneer',
+        source: 'vegetarianrecipes.in',
+        cuisine: 'Indian',
+        image: '🥬',
+        tags: ['North Indian', 'Vegetarian', 'Healthy'],
+        ingredients: ['Spinach (500g)', 'Paneer (250g)', 'Onions (2 medium)', 'Tomatoes (2 medium)', 'Ginger-Garlic Paste', 'Garam Masala', 'Cumin Seeds'],
+        instructions: '1. Blanch spinach in hot water for 2 minutes.\n2. Grind spinach with green chilies to a smooth paste.\n3. Heat butter and add cumin seeds.\n4. Sauté onions and ginger-garlic paste.\n5. Add tomatoes and cook until soft.\n6. Add spinach puree and cook for 5 minutes.\n7. Add paneer cubes and garam masala.',
+        prep_time: 15,
+        cook_time: 25,
+        servings: 4,
+        difficulty: 'Easy',
+        rating: 4.5,
+        reviews: 98,
+        calories: 320
+    },
+    {
+        id: 7,
+        title: 'Rogan Josh',
+        source: 'kashmirirecipes.com',
+        cuisine: 'Indian',
+        image: '🍛',
+        tags: ['Kashmiri', 'Non-Veg', 'Royal'],
+        ingredients: ['Lamb (1 kg)', 'Onions (3 large)', 'Yogurt (1 cup)', 'Ginger-Garlic Paste', 'Rogan Josh Masala', 'Saffron'],
+        instructions: '1. Heat mustard oil and fry onions until golden.\n2. Add ginger-garlic paste and sauté.\n3. Add lamb and brown on all sides.\n4. Add rogan josh masala and cook for 5 minutes.\n5. Add yogurt and simmer for 45 minutes.\n6. Add fennel powder and dry ginger.\n7. Cook until meat is tender.',
+        prep_time: 25,
+        cook_time: 55,
+        servings: 6,
+        difficulty: 'Hard',
+        rating: 4.7,
+        reviews: 112,
+        calories: 580
+    },
+    {
+        id: 8,
+        title: 'Vegetable Pulao',
+        source: 'indianrice.com',
+        cuisine: 'Indian',
+        image: '🍚',
+        tags: ['North Indian', 'Vegetarian', 'One-pot'],
+        ingredients: ['Basmati Rice (2 cups)', 'Mixed Vegetables (2 cups)', 'Onions (2 medium)', 'Cardamom', 'Cloves', 'Cinnamon', 'Ghee (2 tbsp)'],
+        instructions: '1. Rinse rice and soak for 30 minutes.\n2. Heat ghee and add whole spices.\n3. Add onions and sauté until golden.\n4. Add ginger-garlic paste and vegetables.\n5. Sauté for 5 minutes.\n6. Add rice and cook for 2 minutes.\n7. Add water and salt.\n8. Cover and cook until rice is done.',
+        prep_time: 15,
+        cook_time: 25,
+        servings: 4,
+        difficulty: 'Easy',
+        rating: 4.4,
+        reviews: 76,
+        calories: 300
+    },
+    {
+        id: 9,
+        title: 'Malai Kofta',
+        source: 'royalindianrecipes.com',
+        cuisine: 'Indian',
+        image: '🥘',
+        tags: ['North Indian', 'Vegetarian', 'Rich'],
+        ingredients: ['Potatoes (3 large)', 'Paneer (200g)', 'Cashews (1/2 cup)', 'Raisins (1/4 cup)', 'Onions (2 large)', 'Tomatoes (3 medium)', 'Cream (1/2 cup)'],
+        instructions: '1. Boil and mash potatoes.\n2. Mix with paneer and shape into balls.\n3. Stuff with cashews and raisins.\n4. Deep fry koftas until golden brown.\n5. Prepare gravy with onions, tomatoes, and spices.\n6. Add cream and simmer.\n7. Add the koftas to the gravy.',
+        prep_time: 30,
+        cook_time: 35,
+        servings: 4,
+        difficulty: 'Hard',
+        rating: 4.6,
+        reviews: 89,
+        calories: 500
+    },
+    {
+        id: 10,
+        title: 'Garlic Naan',
+        source: 'indianbreads.com',
+        cuisine: 'Indian',
+        image: '🫓',
+        tags: ['North Indian', 'Vegetarian', 'Bread'],
+        ingredients: ['All-purpose Flour (2 cups)', 'Yogurt (1/2 cup)', 'Baking Powder', 'Sugar', 'Salt', 'Garlic (6 cloves)', 'Coriander Leaves'],
+        instructions: '1. Mix flour, baking powder, sugar, and salt.\n2. Add yogurt and knead into a soft dough.\n3. Cover and rest for 2 hours.\n4. Divide into balls and roll out.\n5. Sprinkle minced garlic and coriander.\n6. Cook on hot tawa until bubbles appear.\n7. Flip and cook the other side.\n8. Brush with butter.',
+        prep_time: 20,
+        cook_time: 15,
+        servings: 6,
+        difficulty: 'Easy',
+        rating: 4.3,
+        reviews: 54,
+        calories: 200
     }
-
-    init() {
-        document.documentElement.setAttribute('data-theme', this.currentTheme);
-        this.updateToggleIcon();
-    }
-
-    toggle() {
-        this.currentTheme = this.currentTheme === 'light' ? 'dark' : 'light';
-        document.documentElement.setAttribute('data-theme', this.currentTheme);
-        appState.set('theme', this.currentTheme).persist('theme');
-        this.updateToggleIcon();
-        this.showToast(`Theme switched to ${this.currentTheme} mode`, 'info');
-    }
-
-    updateToggleIcon() {
-        const toggle = document.querySelector('.theme-toggle');
-        if (toggle) {
-            toggle.innerHTML = this.currentTheme === 'light' ? '🌙' : '☀️';
-            toggle.setAttribute('aria-label', 
-                `Switch to ${this.currentTheme === 'light' ? 'dark' : 'light'} mode`
-            );
-        }
-    }
-
-    showToast(message, type = 'info') {
-        Toast.show(message, type);
-    }
-}
-
-const themeManager = new ThemeManager();
-
-// ============================================
-// TOAST NOTIFICATION SYSTEM
-// ============================================
-class Toast {
-    static container = null;
-
-    static init() {
-        if (!this.container) {
-            this.container = document.createElement('div');
-            this.container.className = 'toast-container';
-            document.body.appendChild(this.container);
-        }
-    }
-
-    static show(message, type = 'info', duration = 3000) {
-        this.init();
-
-        const toast = document.createElement('div');
-        toast.className = `toast toast-${type}`;
-        
-        const icons = {
-            success: '✅',
-            error: '❌',
-            warning: '⚠️',
-            info: 'ℹ️',
-        };
-
-        toast.innerHTML = `
-            <span>${icons[type] || 'ℹ️'}</span>
-            <span>${message}</span>
-            <button class="toast-close" aria-label="Close notification">&times;</button>
-        `;
-
-        const close = () => {
-            toast.style.animation = 'slideInRight 0.3s reverse';
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.parentNode.removeChild(toast);
-                }
-            }, 300);
-        };
-
-        toast.querySelector('.toast-close').addEventListener('click', close);
-
-        setTimeout(() => {
-            close();
-        }, duration);
-
-        this.container.appendChild(toast);
-    }
-}
-
-// ============================================
-// RECIPE STORE
-// ============================================
-class RecipeStore {
-    static recipes = [
-        {
-            id: 1,
-            title: 'Koulenje',
-            source: 'armenianmuseum.org',
-            cuisine: 'Armenian',
-            image: '🥙',
-            tags: ['Vegetarian', 'Pescatarian'],
-            ingredients: ['Cottage Cheese', 'Feta', 'Peppers', 'Herbs'],
-            instructions: '1. Mix cottage cheese and feta.\n2. Stuff into peppers.\n3. Bake at 350°F for 30 minutes.',
-            prep_time: 20,
-            cook_time: 30,
-            servings: 4,
-            difficulty: 'Medium',
-            featured: true,
-            rating: 4.5,
-            reviews: 12,
-        },
-        {
-            id: 2,
-            title: 'Challah',
-            source: 'bbcgoodfood.com',
-            cuisine: 'Polish',
-            image: '🍞',
-            tags: ['Vegetarian', 'Dairy-Free', 'Pescatarian'],
-            ingredients: ['Flour', 'Yeast', 'Eggs', 'Sugar', 'Oil'],
-            instructions: '1. Mix flour, yeast, and sugar.\n2. Add eggs and oil.\n3. Knead and let rise.\n4. Braid and bake.',
-            prep_time: 30,
-            cook_time: 25,
-            servings: 8,
-            difficulty: 'Hard',
-            featured: true,
-            rating: 4.8,
-            reviews: 8,
-        },
-        {
-            id: 3,
-            title: 'Cottage Cheese Stuffed Peppers',
-            source: 'cookinglsl.com',
-            cuisine: 'Mediterranean',
-            image: '🫑',
-            tags: ['Vegetarian', 'Gluten-Free', 'Low-Carb'],
-            ingredients: ['Cottage Cheese', 'Bell Peppers', 'Herbs', 'Olive Oil'],
-            instructions: '1. Cut peppers in half.\n2. Mix cottage cheese with herbs.\n3. Stuff peppers.\n4. Drizzle with olive oil.\n5. Bake.',
-            prep_time: 15,
-            cook_time: 25,
-            servings: 4,
-            difficulty: 'Easy',
-            featured: true,
-            rating: 4.3,
-            reviews: 15,
-        },
-        {
-            id: 4,
-            title: 'Apam Balik',
-            source: 'nyonyacooking.com',
-            cuisine: 'Malaysian',
-            image: '🥞',
-            tags: ['Vegetarian', 'Pescatarian'],
-            ingredients: ['Milk', 'Eggs', 'Flour', 'Baking Powder', 'Sugar'],
-            instructions: '1. Mix all ingredients.\n2. Cook in a pan.\n3. Flip and cook until golden.',
-            prep_time: 10,
-            cook_time: 15,
-            servings: 6,
-            difficulty: 'Easy',
-            featured: false,
-            rating: 4.7,
-            reviews: 6,
-        },
-        {
-            id: 5,
-            title: 'White Chocolate Creme Brulee',
-            source: 'bbcgoodfood.com',
-            cuisine: 'French',
-            image: '🍮',
-            tags: ['Vegetarian', 'Gluten-Free'],
-            ingredients: ['Double Cream', 'White Chocolate', 'Vanilla', 'Egg Yolks', 'Sugar'],
-            instructions: '1. Heat cream and chocolate.\n2. Whisk egg yolks and sugar.\n3. Combine and bake.\n4. Chill and caramelize.',
-            prep_time: 20,
-            cook_time: 40,
-            servings: 4,
-            difficulty: 'Hard',
-            featured: false,
-            rating: 4.9,
-            reviews: 20,
-        },
-        {
-            id: 6,
-            title: 'Beef Mechado',
-            source: 'panlasangpinoy.com',
-            cuisine: 'Filipino',
-            image: '🥩',
-            tags: ['Gluten-Free', 'Dairy-Free'],
-            ingredients: ['Beef', 'Tomato Puree', 'Onion', 'Garlic', 'Potatoes'],
-            instructions: '1. Brown beef.\n2. Sauté onion and garlic.\n3. Add tomato puree and simmer.\n4. Add potatoes.\n5. Cook until tender.',
-            prep_time: 20,
-            cook_time: 60,
-            servings: 6,
-            difficulty: 'Medium',
-            featured: false,
-            rating: 4.4,
-            reviews: 10,
-        },
-    ];
-
-    static getFeatured() {
-        return this.recipes.filter(r => r.featured);
-    }
-
-    static getAll() {
-        return this.recipes;
-    }
-
-    static getById(id) {
-        return this.recipes.find(r => r.id === parseInt(id));
-    }
-
-    static search(query) {
-        const q = query.toLowerCase().trim();
-        if (!q) return this.recipes;
-        
-        return this.recipes.filter(r =>
-            r.title.toLowerCase().includes(q) ||
-            r.ingredients.some(i => i.toLowerCase().includes(q)) ||
-            r.cuisine.toLowerCase().includes(q) ||
-            r.tags.some(t => t.toLowerCase().includes(q))
-        );
-    }
-
-    static filterByDiet(diet) {
-        if (!diet || diet === 'all') return this.recipes;
-        return this.recipes.filter(r =>
-            r.tags.some(t => t.toLowerCase().includes(diet.toLowerCase()))
-        );
-    }
-
-    static filterByCuisine(cuisine) {
-        if (!cuisine || cuisine === 'all') return this.recipes;
-        return this.recipes.filter(r =>
-            r.cuisine.toLowerCase().includes(cuisine.toLowerCase())
-        );
-    }
-}
+];
 
 // ============================================
-// PAGINATION
+// PAGE INITIALIZATION
 // ============================================
-class Pagination {
-    constructor(items, itemsPerPage = 12) {
-        this.items = items;
-        this.itemsPerPage = itemsPerPage;
-        this.currentPage = 1;
-    }
 
-    get totalPages() {
-        return Math.ceil(this.items.length / this.itemsPerPage);
-    }
-
-    get currentItems() {
-        const start = (this.currentPage - 1) * this.itemsPerPage;
-        const end = start + this.itemsPerPage;
-        return this.items.slice(start, end);
-    }
-
-    goTo(page) {
-        if (page < 1) page = 1;
-        if (page > this.totalPages) page = this.totalPages;
-        this.currentPage = page;
-        return this.currentItems;
-    }
-
-    next() {
-        return this.goTo(this.currentPage + 1);
-    }
-
-    prev() {
-        return this.goTo(this.currentPage - 1);
-    }
-
-    getPaginationInfo() {
-        return {
-            currentPage: this.currentPage,
-            totalPages: this.totalPages,
-            totalItems: this.items.length,
-            startItem: (this.currentPage - 1) * this.itemsPerPage + 1,
-            endItem: Math.min(this.currentPage * this.itemsPerPage, this.items.length),
-        };
-    }
-}
-
-// ============================================
-// PANTRY MANAGER
-// ============================================
-class PantryManager {
-    constructor() {
-        this.items = appState.get('pantry');
-        this.suggestedRecipes = [];
-    }
-
-    addItem(item) {
-        const trimmed = item.trim();
-        if (!trimmed) return false;
-        if (this.items.includes(trimmed)) {
-            Toast.show(`${trimmed} is already in your pantry!`, 'warning');
-            return false;
-        }
-        this.items.push(trimmed);
-        appState.set('pantry', this.items).persist('pantry');
-        this.save();
-        this.updateUI();
-        Toast.show(`Added ${trimmed} to your pantry!`, 'success');
-        return true;
-    }
-
-    removeItem(item) {
-        this.items = this.items.filter(i => i !== item);
-        appState.set('pantry', this.items).persist('pantry');
-        this.save();
-        this.updateUI();
-        Toast.show(`Removed ${item} from pantry`, 'info');
-        return true;
-    }
-
-    getSuggestedRecipes() {
-        if (this.items.length === 0) return [];
-        
-        return RecipeStore.getAll().filter(recipe =>
-            recipe.ingredients.some(ing =>
-                this.items.some(p => ing.toLowerCase().includes(p.toLowerCase()))
-            )
-        );
-    }
-
-    save() {
-        localStorage.setItem('pantry', JSON.stringify(this.items));
-    }
-
-    updateUI() {
-        const container = document.getElementById('pantryItems');
-        const count = document.getElementById('pantryCount');
-        const suggestedContainer = document.getElementById('suggestedRecipes');
-
-        if (container) {
-            if (this.items.length === 0) {
-                container.innerHTML = '<span style="color: var(--text-muted); font-size: 14px;">No ingredients added yet</span>';
-            } else {
-                container.innerHTML = this.items.map(item => `
-                    <div class="pantry-item">
-                        ${item}
-                        <span class="remove" onclick="pantryManager.removeItem('${item}')">×</span>
-                    </div>
-                `).join('');
-            }
-        }
-
-        if (count) {
-            count.textContent = `${this.items.length} ingredients added`;
-        }
-
-        if (suggestedContainer) {
-            const suggested = this.getSuggestedRecipes();
-            if (suggested.length === 0) {
-                suggestedContainer.innerHTML = `
-                    <div class="empty-state" style="grid-column: 1/-1; text-align: center; padding: 40px 20px; color: var(--text-muted);">
-                        <p>Add ingredients to get recipe suggestions!</p>
-                    </div>
-                `;
-            } else {
-                displayRecipes(suggested, 'suggestedRecipes');
-            }
-        }
-    }
-}
-
-const pantryManager = new PantryManager();
-
-// ============================================
-// DISPLAY FUNCTIONS
-// ============================================
-function displayRecipes(recipes, containerId = 'recipesGrid') {
-    const grid = document.getElementById(containerId);
-    if (!grid) return;
-
-    if (!recipes || recipes.length === 0) {
-        grid.innerHTML = `
-            <div class="empty-state" style="grid-column: 1/-1; text-align: center; padding: 60px 20px;">
-                <div style="font-size: 48px; margin-bottom: 16px;">🔍</div>
-                <h3 style="font-size: 20px; color: var(--text-secondary);">No recipes found</h3>
-                <p style="color: var(--text-muted);">Try adjusting your search or filters</p>
-            </div>
-        `;
-        return;
-    }
-
-    const favorites = appState.get('favorites');
-
-    grid.innerHTML = recipes.map((recipe, index) => `
-        <div class="recipe-card animate-fade-up animate-delay-${(index % 4) + 1}">
-            <div class="card-image">
-                ${recipe.image || '🍽️'}
-                <div class="badge-diet">
-                    ${recipe.tags.map(tag => `<span>${tag}</span>`).join('')}
-                </div>
-            </div>
-            <div class="card-body">
-                <h3 class="recipe-title">${recipe.title}</h3>
-                <p class="recipe-source">${recipe.source}</p>
-                <p class="recipe-cuisine">${recipe.cuisine}</p>
-                <div class="recipe-tags">
-                    ${recipe.tags.map(tag => `<span>${tag}</span>`).join('')}
-                </div>
-                <div class="recipe-rating">
-                    <span>⭐ ${recipe.rating || 0}</span>
-                    <span style="color: var(--text-muted); font-size: 12px;">(${recipe.reviews || 0} reviews)</span>
-                </div>
-                <div class="recipe-ingredients">
-                    <h4>YOU'LL NEED</h4>
-                    <div class="ingredient-list">
-                        ${recipe.ingredients.map(ing => `<span>${ing}</span>`).join('')}
-                    </div>
-                </div>
-                <div style="display: flex; gap: 8px; margin-top: 12px;">
-                    <a href="recipe-detail.html?id=${recipe.id}" class="btn btn-primary" style="flex: 1;">
-                        <i class="fas fa-arrow-right"></i> View Recipe
-                    </a>
-                    <button class="btn btn-secondary btn-sm favorite-btn" 
-                            onclick="toggleFavorite(${recipe.id})"
-                            data-favorite="${favorites.includes(recipe.id)}">
-                        <i class="fas fa-${favorites.includes(recipe.id) ? 'heart' : 'heart-o'}"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    `).join('');
-}
-
-// ============================================
-// FAVORITES
-// ============================================
-function toggleFavorite(recipeId) {
-    const favorites = appState.get('favorites');
-    const index = favorites.indexOf(recipeId);
-    
-    if (index > -1) {
-        favorites.splice(index, 1);
-        Toast.show('Removed from favorites', 'info');
-    } else {
-        favorites.push(recipeId);
-        Toast.show('Added to favorites ❤️', 'success');
-    }
-    
-    appState.set('favorites', favorites).persist('favorites');
-    
-    // Update all favorite buttons
-    document.querySelectorAll('.favorite-btn').forEach(btn => {
-        const id = parseInt(btn.dataset.recipeId);
-        if (id === recipeId) {
-            const isFavorite = favorites.includes(recipeId);
-            btn.dataset.favorite = isFavorite;
-            btn.innerHTML = `<i class="fas fa-${isFavorite ? 'heart' : 'heart-o'}"></i>`;
-        }
-    });
-}
-
-// ============================================
-// SEARCH WITH DEBOUNCING
-// ============================================
-function debounce(func, delay) {
-    let timeout;
-    return function(...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), delay);
-    };
-}
-
-function searchRecipes(query) {
-    if (!query || query.length < 2) {
-        displayRecipes(RecipeStore.getAll());
-        return;
-    }
-    const results = RecipeStore.search(query);
-    displayRecipes(results);
-}
-
-const debouncedSearch = debounce(searchRecipes, 300);
-
-// ============================================
-// LOAD RECIPE DETAIL
-// ============================================
-function loadRecipeDetail() {
-    const container = document.getElementById('recipeDetail');
-    if (!container) return;
-
-    const params = new URLSearchParams(window.location.search);
-    const recipeId = parseInt(params.get('id'));
-    const recipe = RecipeStore.getById(recipeId);
-
-    if (!recipe) {
-        container.innerHTML = `
-            <div style="text-align: center; padding: 60px 20px;">
-                <h2>Recipe not found</h2>
-                <p><a href="recipes.html" style="color: var(--primary);">Browse all recipes</a></p>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = `
-        <div class="recipe-detail animate-fade-up">
-            <div class="detail-image">${recipe.image}</div>
-            <h1 class="detail-title">${recipe.title}</h1>
-            <div class="detail-meta">
-                <span class="meta-item"><i class="fas fa-utensils"></i> ${recipe.cuisine}</span>
-                <span class="meta-item"><i class="fas fa-clock"></i> Prep: ${recipe.prep_time}m</span>
-                <span class="meta-item"><i class="fas fa-clock"></i> Cook: ${recipe.cook_time}m</span>
-                <span class="meta-item"><i class="fas fa-users"></i> ${recipe.servings} servings</span>
-                <span class="meta-item"><i class="fas fa-signal"></i> ${recipe.difficulty}</span>
-                <span class="meta-item"><i class="fas fa-star" style="color: #F1C40F;"></i> ${recipe.rating} (${recipe.reviews} reviews)</span>
-            </div>
-            <div class="detail-tags">
-                ${recipe.tags.map(tag => `<span class="meta-item">${tag}</span>`).join('')}
-            </div>
-            <div class="detail-section">
-                <h3><i class="fas fa-list"></i> Ingredients</h3>
-                <ul>
-                    ${recipe.ingredients.map(ing => `<li>${ing}</li>`).join('')}
-                </ul>
-            </div>
-            <div class="detail-section">
-                <h3><i class="fas fa-list-ol"></i> Instructions</h3>
-                <ol>
-                    ${recipe.instructions.split('\n').filter(s => s.trim()).map(step => `<li>${step}</li>`).join('')}
-                </ol>
-            </div>
-            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                <a href="recipes.html" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Back to Recipes
-                </a>
-                <button class="btn btn-primary" onclick="window.print()">
-                    <i class="fas fa-print"></i> Print Recipe
-                </button>
-            </div>
-        </div>
-    `;
-}
-
-// ============================================
-// FORM VALIDATION
-// ============================================
-class FormValidator {
-    static validateEmail(email) {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    }
-
-    static validatePassword(password) {
-        return password.length >= 6;
-    }
-
-    static validateUsername(username) {
-        return username.length >= 3 && /^[a-zA-Z0-9_]+$/.test(username);
-    }
-
-    static validatePhone(phone) {
-        return /^[\d\+\-\(\)]{10,}$/.test(phone);
-    }
-
-    static validateRequired(value) {
-        return value && value.trim().length > 0;
-    }
-}
-
-// ============================================
-// AUTHENTICATION
-// ============================================
-class Auth {
-    static login(email, password) {
-        if (!FormValidator.validateEmail(email)) {
-            Toast.show('Please enter a valid email', 'error');
-            return false;
-        }
-
-        if (!FormValidator.validatePassword(password)) {
-            Toast.show('Password must be at least 6 characters', 'error');
-            return false;
-        }
-
-        // Simulate login (replace with actual API call)
-        const user = {
-            id: 1,
-            username: 'john_doe',
-            email: email,
-            name: 'John Doe',
-            avatar: 'https://ui-avatars.com/api/?name=John+Doe&background=FF6B35&color=fff'
-        };
-
-        const token = 'mock_jwt_token_' + Date.now();
-
-        appState.set('user', user).persist('user');
-        appState.set('token', token).persist('token');
-
-        Toast.show('Welcome back! 🎉', 'success');
-        
-        setTimeout(() => {
-            window.location.href = 'index.html';
-        }, 1000);
-
-        return true;
-    }
-
-    static register(username, email, password, name) {
-        if (!FormValidator.validateUsername(username)) {
-            Toast.show('Username must be at least 3 characters and contain only letters, numbers, and underscores', 'error');
-            return false;
-        }
-
-        if (!FormValidator.validateEmail(email)) {
-            Toast.show('Please enter a valid email', 'error');
-            return false;
-        }
-
-        if (!FormValidator.validatePassword(password)) {
-            Toast.show('Password must be at least 6 characters', 'error');
-            return false;
-        }
-
-        Toast.show('Account created successfully! 🎁', 'success');
-        
-        setTimeout(() => {
-            window.location.href = 'login.html';
-        }, 1000);
-
-        return true;
-    }
-
-    static logout() {
-        appState.set('user', null).persist('user');
-        appState.set('token', null).persist('token');
-        Toast.show('Logged out successfully', 'info');
-        
-        setTimeout(() => {
-            window.location.href = 'index.html';
-        }, 500);
-    }
-
-    static isAuthenticated() {
-        return !!appState.get('token');
-    }
-}
-
-// ============================================
-// INITIALIZE
-// ============================================
 document.addEventListener('DOMContentLoaded', function() {
-    // Load theme
-    themeManager.init();
+    console.log('🍽️ Pantry App Loading...');
+    console.log('📍 Current page:', window.location.pathname.split('/').pop() || 'index.html');
+    console.log('🔐 Auth status:', authToken ? 'Logged In ✅' : 'Logged Out ❌');
 
-    // Check authentication status
-    const isAuth = Auth.isAuthenticated();
-    const user = appState.get('user');
-
-    // Update UI based on auth status
-    updateAuthUI(isAuth, user);
-
-    // Setup event listeners
-    setupEventListeners();
+    // Initialize theme
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
 
     // Load content based on page
-    const page = window.location.pathname.split('/').pop();
+    const page = window.location.pathname.split('/').pop() || 'index.html';
 
     switch(page) {
         case 'index.html':
@@ -755,647 +226,1070 @@ document.addEventListener('DOMContentLoaded', function() {
             loadPantryPage();
             break;
         case 'login.html':
+            setupLoginPage();
             break;
         case 'register.html':
+            setupRegisterPage();
             break;
-        default:
+        case 'contact.html':
+            setupContactPage();
+            break;
+        case 'about.html':
+            // Nothing special needed
             break;
     }
 
-    console.log(`🍽️ ${APP_CONFIG.name} v${APP_CONFIG.version} loaded!`);
-    console.log(`📚 ${RecipeStore.getAll().length} recipes available`);
-    console.log(`📦 ${appState.get('pantry').length} items in pantry`);
-    console.log(`❤️ ${appState.get('favorites').length} favorites`);
+    // Setup common elements
+    setupNavbar();
+    setupCookieConsent();
+    setupSearch();
+    setupFilterTags();
+    setupAI();
+
+    console.log('✅ App loaded successfully!');
 });
 
 // ============================================
-// PAGE LOADERS
+// HOMEPAGE FUNCTIONS
 // ============================================
+
 function loadHomePage() {
-    const featured = RecipeStore.getFeatured();
-    displayRecipes(featured);
+    console.log('📄 Loading homepage...');
+
+    const recipesGrid = document.getElementById('recipesGrid');
+    if (recipesGrid) {
+        displayRecipes(sampleRecipes.slice(0, 6), recipesGrid);
+    }
+
+    updateNavbarUser();
 }
 
-function loadRecipesPage() {
+// ============================================
+// RECIPES PAGE FUNCTIONS (FIXED!)
+// ============================================
+
+async function loadRecipesPage() {
+    console.log('📄 Loading recipes page...');
+
+    const recipesGrid = document.getElementById('recipesGrid');
+    if (!recipesGrid) return;
+
+    // Check for search query
     const params = new URLSearchParams(window.location.search);
-    const search = params.get('search');
-    
-    if (search) {
-        const results = RecipeStore.search(search);
-        displayRecipes(results);
-    } else {
-        displayRecipes(RecipeStore.getAll());
+    const searchQuery = params.get('search');
+
+    let allRecipes = [];
+
+    // ─── STEP 1: Try to fetch from API ───
+    try {
+        const response = await fetch(`${API_URL}/recipes`);
+        const data = await response.json();
+
+        if (response.ok && data.recipes && data.recipes.length > 0) {
+            allRecipes = data.recipes;
+            console.log('✅ Loaded', allRecipes.length, 'recipes from API');
+        }
+    } catch (error) {
+        console.log('⚠️ API not available:', error.message);
     }
+
+    // ─── STEP 2: Merge with sample recipes (avoid duplicates) ───
+    const apiIds = new Set(allRecipes.map(r => r.id));
+
+    sampleRecipes.forEach(sample => {
+        if (!apiIds.has(sample.id)) {
+            allRecipes.push(sample);
+        }
+    });
+
+    console.log('📊 Total recipes after merge:', allRecipes.length);
+
+    // ─── STEP 3: Filter by search query ───
+    if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        allRecipes = allRecipes.filter(r => {
+            // Check title
+            if (r.title && r.title.toLowerCase().includes(q)) return true;
+
+            // Check cuisine
+            if (r.cuisine && r.cuisine.toLowerCase().includes(q)) return true;
+
+            // Check ingredients (array or string)
+            if (Array.isArray(r.ingredients)) {
+                if (r.ingredients.some(i => i.toLowerCase().includes(q))) return true;
+            } else if (typeof r.ingredients === 'string') {
+                if (r.ingredients.toLowerCase().includes(q)) return true;
+            }
+
+            return false;
+        });
+        console.log('🔍 Filtered to', allRecipes.length, 'recipes for:', searchQuery);
+    }
+
+    // ─── STEP 4: Display ───
+    displayRecipes(allRecipes, recipesGrid);
 }
+
+// ============================================
+// RECIPE DETAIL PAGE (FIXED!)
+// ============================================
+
+async function loadRecipeDetail() {
+    console.log('═══════════════════════════════════════════');
+    console.log('📄 Loading recipe detail page...');
+    console.log('🔗 Full URL:', window.location.href);
+    console.log('═══════════════════════════════════════════');
+
+    const container = document.getElementById('recipeDetail');
+    if (!container) return;
+
+    // Get ID from URL
+    const params = new URLSearchParams(window.location.search);
+    const recipeIdParam = params.get('id');
+
+    console.log('🆔 Recipe ID from URL:', recipeIdParam);
+
+    if (!recipeIdParam) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="icon">😕</div>
+                <h3>No recipe selected</h3>
+                <p><a href="recipes.html" style="color: var(--primary);">Browse all recipes</a></p>
+            </div>
+        `;
+        return;
+    }
+
+    let recipe = null;
+
+    // ─── STEP 1: Try API first ───
+    try {
+        const response = await fetch(`${API_URL}/recipes/${recipeIdParam}`);
+        const data = await response.json();
+
+        if (response.ok && data.recipe) {
+            recipe = data.recipe;
+            console.log('✅ Found in API:', recipe.title);
+        }
+    } catch (error) {
+        console.log('⚠️ API not available');
+    }
+
+    // ─── STEP 2: Fallback to samples ───
+    if (!recipe) {
+        const numericId = parseInt(recipeIdParam);
+        if (!isNaN(numericId)) {
+            recipe = sampleRecipes.find(r => r.id === numericId);
+            if (recipe) console.log('✅ Found in samples:', recipe.title);
+        }
+    }
+
+    // ─── STEP 3: If still not found ───
+    if (!recipe) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="icon">😕</div>
+                <h3>Recipe not found</h3>
+                <p><a href="recipes.html" style="color: var(--primary);">Browse all recipes</a></p>
+            </div>
+        `;
+        return;
+    }
+
+    // ─── STEP 4: Display ───
+    displayRecipeDetail(recipe, container);
+}
+
+function displayRecipeDetail(recipe, container) {
+    console.log('✅ Displaying:', recipe.title, '| ID:', recipe.id);
+
+    const instructions = recipe.instructions
+        ? recipe.instructions.split('\n').filter(s => s.trim())
+        : [];
+
+    // Handle ingredients that could be string or array
+    let ingredientsHtml = '';
+    if (Array.isArray(recipe.ingredients)) {
+        ingredientsHtml = recipe.ingredients.map(ing => `<li>${ing}</li>`).join('');
+    } else if (typeof recipe.ingredients === 'string') {
+        if (recipe.ingredients.startsWith('{') && recipe.ingredients.endsWith('}')) {
+            const parsed = recipe.ingredients.slice(1, -1).split(',').map(i => i.trim().replace(/^"|"$/g, ''));
+            ingredientsHtml = parsed.map(ing => `<li>${ing}</li>`).join('');
+        } else {
+            const parsed = recipe.ingredients.split(',').map(i => i.trim());
+            ingredientsHtml = parsed.map(ing => `<li>${ing}</li>`).join('');
+        }
+    } else {
+        ingredientsHtml = '<li>No ingredients listed</li>';
+    }
+
+    container.innerHTML = `
+        <div class="recipe-detail">
+            <div class="detail-image">${recipe.image || '🍽️'}</div>
+            <h1 class="detail-title">${recipe.title}</h1>
+            <p style="color: var(--text-secondary);">${recipe.source || 'Pantry Recipe'}</p>
+
+            <div class="detail-meta">
+                ${recipe.cuisine ? `<span class="meta-item">🍽️ ${recipe.cuisine}</span>` : ''}
+                ${recipe.prep_time ? `<span class="meta-item">⏱️ Prep: ${recipe.prep_time}m</span>` : ''}
+                ${recipe.cook_time ? `<span class="meta-item">🍳 Cook: ${recipe.cook_time}m</span>` : ''}
+                ${recipe.servings ? `<span class="meta-item">👥 ${recipe.servings} servings</span>` : ''}
+                ${recipe.difficulty ? `<span class="meta-item">📊 ${recipe.difficulty}</span>` : ''}
+                ${recipe.rating ? `<span class="meta-item">⭐ ${recipe.rating}</span>` : ''}
+                ${recipe.calories ? `<span class="meta-item">🔥 ${recipe.calories} cal</span>` : ''}
+            </div>
+
+            ${recipe.tags && Array.isArray(recipe.tags) ? `
+                <div class="detail-tags">
+                    ${recipe.tags.map(tag => `<span class="meta-item">${tag}</span>`).join('')}
+                </div>
+            ` : ''}
+
+            <div class="detail-section">
+                <h3><i class="fas fa-list"></i> Ingredients</h3>
+                <ul>
+                    ${ingredientsHtml}
+                </ul>
+            </div>
+
+            <div class="detail-section">
+                <h3><i class="fas fa-list-ol"></i> Instructions</h3>
+                <ol>
+                    ${instructions.length > 0
+                        ? instructions.map(step => `<li>${step.trim().replace(/^\d+\.\s*/, '')}</li>`).join('')
+                        : '<li>No instructions available</li>'
+                    }
+                </ol>
+            </div>
+
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <a href="recipes.html" class="btn-back">
+                    <i class="fas fa-arrow-left"></i> Back to Recipes
+                </a>
+                <button class="btn-back" style="background: var(--success);" onclick="window.print()">
+                    <i class="fas fa-print"></i> Print Recipe
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// ============================================
+// PANTRY PAGE FUNCTIONS
+// ============================================
 
 function loadPantryPage() {
-    pantryManager.updateUI();
+    console.log('📄 Loading pantry page...');
+
+    const addBtn = document.getElementById('addPantryBtn');
+    const input = document.getElementById('pantryInput');
+
+    if (addBtn) {
+        addBtn.addEventListener('click', addPantryItem);
+    }
+
+    if (input) {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') addPantryItem();
+        });
+    }
+
+    updatePantryUI();
+}
+
+function addPantryItem() {
+    const input = document.getElementById('pantryInput');
+    if (!input) return;
+
+    const item = input.value.trim();
+
+    if (!item) {
+        showToast('Please enter an ingredient', 'warning');
+        return;
+    }
+
+    if (pantry.includes(item)) {
+        showToast(`${item} is already in your pantry`, 'warning');
+        return;
+    }
+
+    pantry.push(item);
+    localStorage.setItem('pantry', JSON.stringify(pantry));
+    input.value = '';
+
+    updatePantryUI();
+    showToast(`Added ${item} to pantry`, 'success');
+}
+
+function removePantryItem(item) {
+    pantry = pantry.filter(i => i !== item);
+    localStorage.setItem('pantry', JSON.stringify(pantry));
+    updatePantryUI();
+    showToast(`Removed ${item}`, 'info');
+}
+
+function updatePantryUI() {
+    const pantryItems = document.getElementById('pantryItems');
+    const pantryCount = document.getElementById('pantryCount');
+
+    if (!pantryItems) return;
+
+    if (pantry.length === 0) {
+        pantryItems.innerHTML = '<span style="color: var(--text-muted); font-size: 14px;">No ingredients added yet</span>';
+        if (pantryCount) pantryCount.textContent = '0 ingredients added';
+        updateSuggestedRecipes();
+        return;
+    }
+
+    pantryItems.innerHTML = pantry.map(item => `
+        <div class="pantry-item">
+            ${item}
+            <span class="remove" onclick="removePantryItem('${item}')">×</span>
+        </div>
+    `).join('');
+
+    if (pantryCount) {
+        pantryCount.textContent = `${pantry.length} ingredient${pantry.length > 1 ? 's' : ''} added`;
+    }
+
+    updateSuggestedRecipes();
+}
+
+async function updateSuggestedRecipes() {
+    const container = document.getElementById('suggestedRecipes');
+    if (!container) return;
+
+    if (pantry.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state" style="grid-column: 1/-1;">
+                <p>Add ingredients to get recipe suggestions!</p>
+            </div>
+        `;
+        return;
+    }
+
+    let allRecipes = [];
+
+    // ─── STEP 1: Fetch recipes from API ───
+    try {
+        const response = await fetch(`${API_URL}/recipes`);
+        const data = await response.json();
+        if (response.ok && data.recipes) {
+            allRecipes = data.recipes;
+        }
+    } catch (error) {
+        console.log('⚠️ API not available');
+    }
+
+    // ─── STEP 2: Add samples ───
+    const apiIds = new Set(allRecipes.map(r => r.id));
+    sampleRecipes.forEach(sample => {
+        if (!apiIds.has(sample.id)) {
+            allRecipes.push(sample);
+        }
+    });
+
+    // ─── STEP 3: Filter by pantry ───
+    const suggested = allRecipes.filter(recipe => {
+        let recipeIngredients = [];
+        if (Array.isArray(recipe.ingredients)) {
+            recipeIngredients = recipe.ingredients;
+        } else if (typeof recipe.ingredients === 'string') {
+            if (recipe.ingredients.startsWith('{') && recipe.ingredients.endsWith('}')) {
+                recipeIngredients = recipe.ingredients.slice(1, -1).split(',').map(i => i.trim().replace(/^"|"$/g, ''));
+            } else {
+                recipeIngredients = recipe.ingredients.split(',').map(i => i.trim());
+            }
+        }
+        return recipeIngredients.some(ing =>
+            pantry.some(p => ing.toLowerCase().includes(p.toLowerCase()))
+        );
+    });
+
+    // ─── STEP 4: Display ───
+    if (suggested.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state" style="grid-column: 1/-1;">
+                <p>No recipes match your pantry items yet.</p>
+            </div>
+        `;
+        return;
+    }
+
+    displayRecipes(suggested, container);
 }
 
 // ============================================
-// UPDATE AUTH UI
+// DISPLAY RECIPES (Main Function)
 // ============================================
-function updateAuthUI(isAuthenticated, user) {
-    const authLinks = document.querySelectorAll('.auth-links');
+
+function displayRecipes(recipes, container) {
+    if (!container) return;
+
+    if (!recipes || recipes.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="icon">🔍</div>
+                <h3>No recipes found</h3>
+                <p>Try adjusting your search or filters</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = recipes.map(recipe => {
+        let ingredientsDisplay = '';
+        let ingredientsCount = 0;
+
+        if (Array.isArray(recipe.ingredients)) {
+            ingredientsCount = recipe.ingredients.length;
+            ingredientsDisplay = recipe.ingredients.slice(0, 4).map(ing => `<span>${ing}</span>`).join('');
+        } else if (typeof recipe.ingredients === 'string') {
+            let parsed = [];
+            if (recipe.ingredients.startsWith('{') && recipe.ingredients.endsWith('}')) {
+                parsed = recipe.ingredients.slice(1, -1).split(',').map(i => i.trim().replace(/^"|"$/g, ''));
+            } else {
+                parsed = recipe.ingredients.split(',').map(i => i.trim());
+            }
+            ingredientsCount = parsed.length;
+            ingredientsDisplay = parsed.slice(0, 4).map(ing => `<span>${ing}</span>`).join('');
+        }
+
+        return `
+            <div class="recipe-card">
+                <div class="card-image">
+                    ${recipe.image || '🍽️'}
+                    ${recipe.tags && Array.isArray(recipe.tags) ? `
+                        <div class="badge-diet">
+                            ${recipe.tags.slice(0, 2).map(tag => `<span>${tag}</span>`).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="card-body">
+                    <h3 class="recipe-title">${recipe.title}</h3>
+                    <p class="recipe-source">${recipe.source || 'Pantry'}</p>
+                    <p class="recipe-cuisine">${recipe.cuisine || 'Indian'}</p>
+
+                    ${recipe.tags && Array.isArray(recipe.tags) ? `
+                        <div class="recipe-tags">
+                            ${recipe.tags.slice(0, 3).map(tag => `<span>${tag}</span>`).join('')}
+                        </div>
+                    ` : ''}
+
+                    ${recipe.rating ? `
+                        <div style="font-size: 13px; color: var(--text-secondary); margin: 8px 0;">
+                            ⭐ ${recipe.rating} (${recipe.reviews || 0} reviews)
+                        </div>
+                    ` : ''}
+
+                    <div class="recipe-ingredients">
+                        <h4>YOU'LL NEED</h4>
+                        <div class="ingredient-list">
+                            ${ingredientsDisplay}
+                            ${ingredientsCount > 4 ? `<span>+${ingredientsCount - 4}</span>` : ''}
+                        </div>
+                    </div>
+
+                    <a href="recipe-detail.html?id=${recipe.id}" class="btn-view" data-id="${recipe.id}">
+                        <i class="fas fa-arrow-right"></i> View full recipe →
+                    </a>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// ============================================
+// AUTH FUNCTIONS
+// ============================================
+
+function setupLoginPage() {
+    console.log('🔐 Setting up login page...');
+
+    const form = document.getElementById('loginForm');
+    if (!form) return;
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value.trim();
+        const message = document.getElementById('authMessage');
+        const btn = document.getElementById('loginBtn');
+
+        if (!email || !password) {
+            showMessage(message, 'Email and password required', 'error');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
+
+        try {
+            const response = await fetch(`${API_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                authToken = data.token;
+                currentUser = data.user;
+
+                showMessage(message, '✅ Login successful! Redirecting...', 'success');
+
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
+            } else {
+                showMessage(message, data.message || 'Login failed', 'error');
+            }
+        } catch (error) {
+            showMessage(message, 'Network error. Is the server running?', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = 'Sign In';
+        }
+    });
+}
+
+function setupRegisterPage() {
+    console.log('📝 Setting up register page...');
+
+    const form = document.getElementById('registerForm');
+    if (!form) return;
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const username = document.getElementById('registerUsername').value.trim();
+        const email = document.getElementById('registerEmail').value.trim();
+        const password = document.getElementById('registerPassword').value.trim();
+        const message = document.getElementById('registerMessage');
+        const btn = document.getElementById('registerBtn');
+
+        if (!username || !email || !password) {
+            showMessage(message, 'All fields are required', 'error');
+            return;
+        }
+
+        if (password.length < 6) {
+            showMessage(message, 'Password must be at least 6 characters', 'error');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+
+        try {
+            const response = await fetch(`${API_URL}/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                showMessage(message, '✅ Account created! Redirecting to login...', 'success');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1500);
+            } else {
+                showMessage(message, data.message || 'Registration failed', 'error');
+            }
+        } catch (error) {
+            showMessage(message, 'Network error. Is the server running?', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-gift"></i> Create Account & Get Rewards 🎁';
+        }
+    });
+}
+
+function showMessage(element, message, type) {
+    if (!element) return;
+    element.textContent = message;
+    element.className = `auth-message ${type}`;
+
+    setTimeout(() => {
+        element.className = 'auth-message';
+    }, 5000);
+}
+
+function updateNavbarUser() {
     const userDisplay = document.getElementById('userDisplay');
+    if (!userDisplay) return;
 
-    if (isAuthenticated && user) {
-        authLinks.forEach(el => {
-            el.innerHTML = `
-                <span style="display: flex; align-items: center; gap: 8px;">
-                    <img src="${user.avatar}" alt="${user.name}" style="width: 32px; height: 32px; border-radius: 50%;">
-                    <span>${user.name}</span>
-                </span>
-                <button onclick="Auth.logout()" class="btn btn-sm btn-secondary">Logout</button>
-            `;
-        });
-    } else {
-        authLinks.forEach(el => {
-            el.innerHTML = `
-                <a href="login.html" class="btn btn-sm btn-secondary">Sign In</a>
-                <a href="register.html" class="btn btn-sm btn-primary">Join for Rewards</a>
-            `;
-        });
-    }
-
-    if (userDisplay) {
-        userDisplay.textContent = isAuthenticated ? `👋 ${user?.name || 'User'}` : '👋 Welcome!';
+    if (authToken && currentUser) {
+        userDisplay.textContent = `👋 ${currentUser.username}`;
     }
 }
 
 // ============================================
-// EVENT LISTENERS
+// NAVBAR
 // ============================================
-function setupEventListeners() {
-    // Theme toggle
-    document.querySelectorAll('.theme-toggle').forEach(el => {
-        el.addEventListener('click', () => themeManager.toggle());
-    });
 
-    // Hamburger menu
-    document.querySelectorAll('.hamburger').forEach(el => {
-        el.addEventListener('click', function() {
-            document.getElementById('navLinks')?.classList.toggle('open');
+function setupNavbar() {
+    const hamburger = document.querySelector('.hamburger');
+    const navLinks = document.getElementById('navLinks');
+
+    if (hamburger && navLinks) {
+        hamburger.addEventListener('click', () => {
+            navLinks.classList.toggle('open');
         });
-    });
+    }
 
-    // Search
+    window.addEventListener('scroll', () => {
+        const navbar = document.querySelector('.navbar');
+        if (navbar) {
+            if (window.scrollY > 50) {
+                navbar.classList.add('navbar-scrolled');
+            } else {
+                navbar.classList.remove('navbar-scrolled');
+            }
+        }
+    });
+}
+
+// ============================================
+// SEARCH
+// ============================================
+
+function setupSearch() {
     const searchInput = document.getElementById('searchInput');
     const searchBtn = document.getElementById('searchBtn');
 
-    if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-            debouncedSearch(e.target.value);
-        });
-    }
+    if (!searchInput || !searchBtn) return;
 
-    if (searchBtn) {
-        searchBtn.addEventListener('click', () => {
-            const query = searchInput?.value || '';
-            if (query.length > 0) {
-                window.location.href = `recipes.html?search=${encodeURIComponent(query)}`;
-            }
-        });
-    }
-
-    // Quick filters
-    document.querySelectorAll('.filter-tag').forEach(tag => {
-        tag.addEventListener('click', function() {
-            document.querySelectorAll('.filter-tag').forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-            
-            const filter = this.dataset.filter;
-            if (filter === 'all') {
-                displayRecipes(RecipeStore.getAll());
-            } else {
-                const filtered = RecipeStore.getAll().filter(r =>
-                    r.tags.some(t => t.toLowerCase().includes(filter.toLowerCase())) ||
-                    r.cuisine.toLowerCase().includes(filter.toLowerCase())
-                );
-                displayRecipes(filtered);
-            }
-        });
-    });
-
-    // Login form
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const email = document.getElementById('loginEmail')?.value;
-            const password = document.getElementById('loginPassword')?.value;
-            Auth.login(email, password);
-        });
-    }
-
-    // Register form
-    const registerForm = document.getElementById('registerForm');
-    if (registerForm) {
-        registerForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const username = document.getElementById('registerUsername')?.value;
-            const email = document.getElementById('registerEmail')?.value;
-            const password = document.getElementById('registerPassword')?.value;
-            const name = document.getElementById('registerName')?.value || username;
-            Auth.register(username, email, password, name);
-        });
-    }
-
-    // Contact form
-    const contactForm = document.getElementById('contactForm');
-    if (contactForm) {
-        contactForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            Toast.show('✅ Thank you for your message! We\'ll get back to you soon.', 'success');
-            this.reset();
-        });
-    }
-
-    // Pantry
-    const pantryInput = document.getElementById('pantryInput');
-    const addPantryBtn = document.getElementById('addPantryBtn');
-
-    if (addPantryBtn) {
-        addPantryBtn.addEventListener('click', () => {
-            const value = pantryInput?.value;
-            if (value) {
-                pantryManager.addItem(value);
-                pantryInput.value = '';
-            }
-        });
-    }
-
-    if (pantryInput) {
-        pantryInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                addPantryBtn?.click();
-            }
-        });
-    }
-
-    // Cookie consent
-    const cookieConsent = document.getElementById('cookieConsent');
-    if (cookieConsent && !localStorage.getItem('cookiesAccepted')) {
-        cookieConsent.style.display = 'flex';
-    }
-
-    document.getElementById('acceptCookies')?.addEventListener('click', function() {
-        localStorage.setItem('cookiesAccepted', 'true');
-        document.getElementById('cookieConsent').style.display = 'none';
-        Toast.show('Cookies accepted!', 'success');
-    });
-
-    document.getElementById('declineCookies')?.addEventListener('click', function() {
-        document.getElementById('cookieConsent').style.display = 'none';
-    });
-
-    // Navbar scroll effect
-    let lastScroll = 0;
-    window.addEventListener('scroll', () => {
-        const navbar = document.querySelector('.navbar');
-        const currentScroll = window.pageYOffset;
-        
-        if (currentScroll > 50) {
-            navbar.classList.add('navbar-scrolled');
-        } else {
-            navbar.classList.remove('navbar-scrolled');
+    const performSearch = () => {
+        const query = searchInput.value.trim();
+        if (query) {
+            window.location.href = `recipes.html?search=${encodeURIComponent(query)}`;
         }
-        
-        lastScroll = currentScroll;
+    };
+
+    searchBtn.addEventListener('click', performSearch);
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') performSearch();
     });
+}
 
-    // Lazy load images
-    if ('IntersectionObserver' in window) {
-        const imageObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const img = entry.target;
-                    if (img.dataset.src) {
-                        img.src = img.dataset.src;
-                        img.removeAttribute('data-src');
-                    }
-                    imageObserver.unobserve(img);
+// ============================================
+// FILTER TAGS
+// ============================================
+
+function setupFilterTags() {
+    const filterTags = document.querySelectorAll('.filter-tag');
+
+    filterTags.forEach(tag => {
+        tag.addEventListener('click', function() {
+            filterTags.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+
+            const filter = this.dataset.filter;
+            const recipesGrid = document.getElementById('recipesGrid');
+
+            if (!recipesGrid) return;
+
+            if (filter === 'all') {
+                displayRecipes(sampleRecipes, recipesGrid);
+            } else {
+                const filtered = sampleRecipes.filter(recipe =>
+                    recipe.tags && recipe.tags.some(t =>
+                        t.toLowerCase().includes(filter.toLowerCase())
+                    ) ||
+                    recipe.cuisine && recipe.cuisine.toLowerCase().includes(filter.toLowerCase()) ||
+                    recipe.title.toLowerCase().includes(filter.toLowerCase())
+                );
+                displayRecipes(filtered, recipesGrid);
+            }
+        });
+    });
+}
+
+// ============================================
+// AI RECIPE GENERATOR
+// ============================================
+
+function setupAI() {
+    console.log('🤖 Setting up AI Recipe Generator...');
+
+    const generateBtn = document.getElementById('generateAIRecipeBtn');
+    if (!generateBtn) {
+        console.log('⚠️ AI section not on this page');
+        return;
+    }
+
+    console.log('✅ AI section found');
+
+    generateBtn.addEventListener('click', generateAIRecipe);
+
+    const aiInput = document.getElementById('aiIngredients');
+    if (aiInput) {
+        aiInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') generateAIRecipe();
+        });
+    }
+}
+
+async function generateAIRecipe() {
+    console.log('🤖 Generate button clicked');
+
+    const aiIngredients = document.getElementById('aiIngredients');
+    const aiCuisine = document.getElementById('aiCuisine');
+    const generateBtn = document.getElementById('generateAIRecipeBtn');
+    const aiLoading = document.getElementById('aiLoading');
+    const aiResult = document.getElementById('aiResult');
+
+    if (!aiIngredients || !generateBtn) return;
+
+    const ingredients = aiIngredients.value.trim();
+    const cuisine = aiCuisine ? aiCuisine.value : '';
+
+    if (!ingredients) {
+        showToast('Please enter some ingredients! 🍽️', 'warning');
+        aiIngredients.focus();
+        return;
+    }
+
+    if (ingredients.length < 3) {
+        showToast('Please enter valid ingredients', 'warning');
+        return;
+    }
+
+    if (!authToken) {
+        showToast('Please login to use AI features! 🔐', 'error');
+        setTimeout(() => {
+            window.location.href = 'login.html';
+        }, 1500);
+        return;
+    }
+
+    aiLoading.style.display = 'block';
+    aiResult.style.display = 'none';
+    generateBtn.disabled = true;
+    generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+
+    try {
+        console.log('📤 Sending request to backend...');
+
+        const response = await fetch(`${API_URL}/ai/generate-recipe`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({
+                ingredients: ingredients,
+                cuisine: cuisine
+            })
+        });
+
+        const data = await response.json();
+        console.log('📥 Response received:', data);
+
+        if (response.ok && data.success) {
+            currentAIRecipe = data.recipe;
+            displayAIRecipe(data.recipe);
+            showToast('✅ Recipe generated successfully!', 'success');
+        } else {
+            if (response.status === 401) {
+                showToast('Session expired. Please login again.', 'error');
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1500);
+            } else {
+                showToast(data.message || 'Failed to generate recipe', 'error');
+            }
+        }
+
+    } catch (error) {
+        console.error('❌ AI Error:', error);
+        showToast('Network error. Is the server running?', 'error');
+    } finally {
+        aiLoading.style.display = 'none';
+        generateBtn.disabled = false;
+        generateBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Generate Recipe';
+    }
+}
+
+function displayAIRecipe(recipe) {
+    console.log('🎨 Displaying AI recipe:', recipe.name);
+
+    const aiResult = document.getElementById('aiResult');
+    if (!aiResult) return;
+
+    aiResult.style.display = 'block';
+
+    const instructions = recipe.instructions
+        ? recipe.instructions.split('\n').filter(s => s.trim())
+        : [];
+
+    aiResult.innerHTML = `
+        <div class="ai-recipe-header">
+            <div>
+                <h3 class="ai-recipe-name">${recipe.name || 'Delicious Recipe'}</h3>
+                <div class="ai-recipe-meta">
+                    ${recipe.difficulty ? `<span>⭐ ${recipe.difficulty}</span>` : ''}
+                    ${recipe.prep_time ? `<span>⏱️ Prep: ${recipe.prep_time}m</span>` : ''}
+                    ${recipe.cook_time ? `<span>🍳 Cook: ${recipe.cook_time}m</span>` : ''}
+                    ${recipe.servings ? `<span>👥 ${recipe.servings} servings</span>` : ''}
+                    ${recipe.calories ? `<span>🔥 ${recipe.calories} cal</span>` : ''}
+                    ${recipe.cuisine ? `<span>🌍 ${recipe.cuisine}</span>` : ''}
+                </div>
+            </div>
+            <div class="ai-result-actions">
+                <button class="btn-save-ai" onclick="saveAIRecipe()">
+                    <i class="fas fa-save"></i> Save Recipe
+                </button>
+                <button class="btn-regenerate-ai" onclick="regenerateAIRecipe()">
+                    <i class="fas fa-redo"></i> Regenerate
+                </button>
+            </div>
+        </div>
+
+        ${recipe.description ? `<p class="ai-description">${recipe.description}</p>` : ''}
+
+        <div class="ai-section-block">
+            <h4><i class="fas fa-list"></i> Ingredients</h4>
+            <ul class="ai-ingredients-list">
+                ${recipe.ingredients && Array.isArray(recipe.ingredients)
+                    ? recipe.ingredients.map(ing => `
+                        <li>
+                            <strong>${ing.name || ing}</strong>
+                            ${ing.quantity ? ` - ${ing.quantity} ${ing.unit || ''}` : ''}
+                        </li>
+                    `).join('')
+                    : '<li>No ingredients listed</li>'
                 }
-            });
+            </ul>
+        </div>
+
+        <div class="ai-section-block">
+            <h4><i class="fas fa-list-ol"></i> Instructions</h4>
+            <ol class="ai-instructions-list">
+                ${instructions.length > 0
+                    ? instructions.map(step => `
+                        <li>${step.trim().replace(/^\d+\.\s*/, '')}</li>
+                    `).join('')
+                    : '<li>No instructions available</li>'
+                }
+            </ol>
+        </div>
+
+        ${recipe.tips ? `
+            <div class="ai-tips">
+                <strong>💡 Pro Tip:</strong>
+                <span>${recipe.tips}</span>
+            </div>
+        ` : ''}
+    `;
+
+    aiResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+async function saveAIRecipe() {
+    console.log('💾 Saving AI recipe...');
+
+    if (!currentAIRecipe) {
+        showToast('No recipe to save!', 'warning');
+        return;
+    }
+
+    if (!authToken) {
+        showToast('Please login to save recipes', 'error');
+        return;
+    }
+
+    const saveBtn = document.querySelector('.btn-save-ai');
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    }
+
+    const ingredients = currentAIRecipe.ingredients
+        .map(ing => typeof ing === 'string' ? ing : ing.name)
+        .join(', ');
+
+    try {
+        const response = await fetch(`${API_URL}/recipes`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({
+                title: currentAIRecipe.name,
+                description: currentAIRecipe.description,
+                ingredients: ingredients,
+                instructions: currentAIRecipe.instructions,
+                prep_time: currentAIRecipe.prep_time || null,
+                cook_time: currentAIRecipe.cook_time || null,
+                servings: currentAIRecipe.servings || null,
+                difficulty: currentAIRecipe.difficulty || 'Medium'
+            })
         });
 
-        document.querySelectorAll('img[data-src]').forEach(img => {
-            imageObserver.observe(img);
+        const data = await response.json();
+
+        if (response.ok) {
+            showToast('✅ Recipe saved to your collection!', 'success');
+
+            if (saveBtn) {
+                saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved!';
+                saveBtn.style.background = 'var(--success-dark)';
+
+                setTimeout(() => {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Recipe';
+                    saveBtn.style.background = '';
+                }, 3000);
+            }
+        } else {
+            showToast(data.message || 'Failed to save recipe', 'error');
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Recipe';
+            }
+        }
+
+    } catch (error) {
+        console.error('Save error:', error);
+        showToast('Network error. Please try again.', 'error');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Recipe';
+        }
+    }
+}
+
+function regenerateAIRecipe() {
+    console.log('🔄 Regenerating...');
+
+    const aiIngredients = document.getElementById('aiIngredients');
+    if (aiIngredients && aiIngredients.value.trim()) {
+        generateAIRecipe();
+    } else {
+        showToast('Please enter ingredients first', 'warning');
+    }
+}
+
+// ============================================
+// TOAST NOTIFICATIONS
+// ============================================
+
+function showToast(message, type = 'info') {
+    document.querySelectorAll('.toast').forEach(t => t.remove());
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+
+    const icons = {
+        success: '✅',
+        error: '❌',
+        warning: '⚠️',
+        info: 'ℹ️'
+    };
+
+    toast.innerHTML = `
+        <span>${icons[type] || 'ℹ️'}</span>
+        <span>${message}</span>
+    `;
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.animation = 'slideInRight 0.3s reverse';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+// ============================================
+// COOKIE CONSENT
+// ============================================
+
+function setupCookieConsent() {
+    const cookieConsent = document.getElementById('cookieConsent');
+    if (!cookieConsent) return;
+
+    if (localStorage.getItem('cookiesAccepted')) {
+        cookieConsent.style.display = 'none';
+        return;
+    }
+
+    cookieConsent.style.display = 'flex';
+
+    const acceptBtn = document.getElementById('acceptCookies');
+    if (acceptBtn) {
+        acceptBtn.addEventListener('click', () => {
+            localStorage.setItem('cookiesAccepted', 'true');
+            cookieConsent.style.display = 'none';
+            showToast('Cookies accepted!', 'success');
+        });
+    }
+
+    const declineBtn = document.getElementById('declineCookies');
+    if (declineBtn) {
+        declineBtn.addEventListener('click', () => {
+            cookieConsent.style.display = 'none';
         });
     }
 }
 
 // ============================================
-// EXPOSE TO GLOBAL SCOPE
-// ============================================
-window.appState = appState;
-window.themeManager = themeManager;
-window.Toast = Toast;
-window.pantryManager = pantryManager;
-window.Auth = Auth;
-window.RecipeStore = RecipeStore;
-window.displayRecipes = displayRecipes;
-window.toggleFavorite = toggleFavorite;
-window.debouncedSearch = debouncedSearch;
-window.searchRecipes = searchRecipes;
-
-console.log('🚀 Advanced features loaded successfully!');
-// ============================================
-// INDIAN RECIPE DATA
+// CONTACT FORM
 // ============================================
 
-const indianRecipes = [
-    {
-        id: 1,
-        title: 'Butter Chicken',
-        source: 'authenticindianrecipes.com',
-        cuisine: 'Indian',
-        image: '🍛',
-        tags: ['North Indian', 'Non-Veg', 'Popular'],
-        ingredients: [
-            'Chicken (500g)',
-            'Butter (50g)',
-            'Tomato Puree (2 cups)',
-            'Heavy Cream (1/2 cup)',
-            'Ginger-Garlic Paste (2 tbsp)',
-            'Red Chili Powder (1 tsp)',
-            'Garam Masala (1 tsp)',
-            'Kasuri Methi (1 tbsp)',
-            'Salt to taste',
-            'Sugar (1 tsp)'
-        ],
-        instructions: `1. Marinate chicken with ginger-garlic paste, chili powder, and salt for 30 minutes.
-2. Heat butter in a pan and cook the marinated chicken until golden brown.
-3. Add tomato puree and cook for 10 minutes.
-4. Add garam masala and sugar, simmer for 15 minutes.
-5. Stir in heavy cream and kasuri methi.
-6. Cook for 5 more minutes.
-7. Garnish with fresh coriander and serve hot with naan or rice.`,
-        prep_time: 20,
-        cook_time: 35,
-        servings: 4,
-        difficulty: 'Medium',
-        featured: true,
-        rating: 4.9,
-        reviews: 156,
-        calories: 450,
-        origin: 'Punjab',
-        dietary: 'Non-Vegetarian'
-    },
-    {
-        id: 2,
-        title: 'Chicken Biryani',
-        source: 'biryaniwala.com',
-        cuisine: 'Indian',
-        image: '🍚',
-        tags: ['Hyderabadi', 'Non-Veg', 'Festival'],
-        ingredients: [
-            'Chicken (1 kg)',
-            'Basmati Rice (2 cups)',
-            'Onions (3 large)',
-            'Tomatoes (2 medium)',
-            'Yogurt (1 cup)',
-            'Ginger-Garlic Paste (2 tbsp)',
-            'Biryani Masala (2 tbsp)',
-            'Saffron (a pinch)',
-            'Mint Leaves (1/2 cup)',
-            'Coriander Leaves (1/2 cup)',
-            'Ghee (4 tbsp)',
-            'Salt to taste'
-        ],
-        instructions: `1. Marinate chicken with yogurt, ginger-garlic paste, and biryani masala for 2 hours.
-2. Soak rice for 30 minutes, then boil until 70% cooked.
-3. Fry onions until golden brown.
-4. Layer the marinated chicken, rice, fried onions, mint, and coriander.
-5. Add saffron soaked in milk.
-6. Seal the pot and cook on low flame for 20 minutes.
-7. Let it rest for 10 minutes before serving.
-8. Serve with raita and salad.`,
-        prep_time: 30,
-        cook_time: 40,
-        servings: 6,
-        difficulty: 'Hard',
-        featured: true,
-        rating: 4.8,
-        reviews: 203,
-        calories: 550,
-        origin: 'Hyderabad',
-        dietary: 'Non-Vegetarian'
-    },
-    {
-        id: 3,
-        title: 'Dal Makhani',
-        source: 'punjabirecipes.com',
-        cuisine: 'Indian',
-        image: '🥘',
-        tags: ['Punjabi', 'Vegetarian', 'Popular'],
-        ingredients: [
-            'Whole Black Lentils (1 cup)',
-            'Kidney Beans (1/4 cup)',
-            'Butter (4 tbsp)',
-            'Cream (1/2 cup)',
-            'Tomato Puree (1 cup)',
-            'Ginger-Garlic Paste (1 tbsp)',
-            'Red Chili Powder (1 tsp)',
-            'Garam Masala (1 tsp)',
-            'Salt to taste'
-        ],
-        instructions: `1. Soak lentils and kidney beans overnight.
-2. Pressure cook until soft and mushy.
-3. Heat butter and sauté ginger-garlic paste.
-4. Add tomato puree and cook for 5 minutes.
-5. Add the cooked lentils and beans.
-6. Simmer for 30 minutes on low heat.
-7. Add cream and garam masala.
-8. Cook for 10 more minutes.
-9. Garnish with butter and serve with naan or rice.`,
-        prep_time: 15,
-        cook_time: 45,
-        servings: 4,
-        difficulty: 'Easy',
-        featured: true,
-        rating: 4.7,
-        reviews: 189,
-        calories: 380,
-        origin: 'Punjab',
-        dietary: 'Vegetarian'
-    },
-    {
-        id: 4,
-        title: 'Chole Bhature',
-        source: 'delhistreetfood.com',
-        cuisine: 'Indian',
-        image: '🫓',
-        tags: ['North Indian', 'Vegetarian', 'Street Food'],
-        ingredients: [
-            'Chickpeas (2 cups)',
-            'Onions (2 large)',
-            'Tomatoes (2 medium)',
-            'Ginger-Garlic Paste (1 tbsp)',
-            'Chole Masala (2 tbsp)',
-            'Tea Bags (for color)',
-            'Coriander Leaves',
-            'Salt to taste',
-            'Oil (2 tbsp)',
-            'For Bhature: Maida (2 cups), Yogurt, Baking Powder'
-        ],
-        instructions: `1. Soak chickpeas overnight with tea bags for color.
-2. Pressure cook chickpeas until soft.
-3. Sauté onions, ginger-garlic paste.
-4. Add tomatoes and cook until soft.
-5. Add chole masala and salt.
-6. Add cooked chickpeas and simmer for 20 minutes.
-7. For bhature, knead maida with yogurt and baking powder.
-8. Rest for 2 hours.
-9. Roll and deep fry until golden.
-10. Serve hot with chole.`,
-        prep_time: 20,
-        cook_time: 35,
-        servings: 4,
-        difficulty: 'Medium',
-        featured: false,
-        rating: 4.6,
-        reviews: 134,
-        calories: 520,
-        origin: 'Delhi',
-        dietary: 'Vegetarian'
-    },
-    {
-        id: 5,
-        title: 'Chicken Tikka Masala',
-        source: 'indianfoodforever.com',
-        cuisine: 'Indian',
-        image: '🍲',
-        tags: ['North Indian', 'Non-Veg', 'Popular'],
-        ingredients: [
-            'Chicken (500g)',
-            'Yogurt (1 cup)',
-            'Tikka Masala (2 tbsp)',
-            'Tomato Puree (1.5 cups)',
-            'Heavy Cream (1/2 cup)',
-            'Butter (2 tbsp)',
-            'Ginger-Garlic Paste (1 tbsp)',
-            'Coriander Leaves',
-            'Salt to taste'
-        ],
-        instructions: `1. Marinate chicken with yogurt and tikka masala for 2 hours.
-2. Grill or bake until charred.
-3. Heat butter and sauté ginger-garlic paste.
-4. Add tomato puree and cook for 8-10 minutes.
-5. Add the grilled chicken pieces.
-6. Simmer for 15 minutes.
-7. Add cream and cook for 5 minutes.
-8. Garnish with coriander.
-9. Serve with naan or rice.`,
-        prep_time: 25,
-        cook_time: 30,
-        servings: 4,
-        difficulty: 'Medium',
-        featured: true,
-        rating: 4.8,
-        reviews: 178,
-        calories: 480,
-        origin: 'Punjab',
-        dietary: 'Non-Vegetarian'
-    },
-    {
-        id: 6,
-        title: 'Palak Paneer',
-        source: 'vegetarianrecipes.in',
-        cuisine: 'Indian',
-        image: '🥬',
-        tags: ['North Indian', 'Vegetarian', 'Healthy'],
-        ingredients: [
-            'Spinach (500g)',
-            'Paneer (250g)',
-            'Onions (2 medium)',
-            'Tomatoes (2 medium)',
-            'Ginger-Garlic Paste (1 tbsp)',
-            'Green Chilies (2)',
-            'Garam Masala (1 tsp)',
-            'Cumin Seeds (1 tsp)',
-            'Butter (2 tbsp)',
-            'Salt to taste'
-        ],
-        instructions: `1. Blanch spinach in hot water for 2 minutes.
-2. Grind spinach with green chilies to a smooth paste.
-3. Heat butter and add cumin seeds.
-4. Sauté onions and ginger-garlic paste.
-5. Add tomatoes and cook until soft.
-6. Add spinach puree and cook for 5 minutes.
-7. Add paneer cubes and garam masala.
-8. Simmer for 5-7 minutes.
-9. Serve hot with naan or rice.`,
-        prep_time: 15,
-        cook_time: 25,
-        servings: 4,
-        difficulty: 'Easy',
-        featured: false,
-        rating: 4.5,
-        reviews: 98,
-        calories: 320,
-        origin: 'North India',
-        dietary: 'Vegetarian'
-    },
-    {
-        id: 7,
-        title: 'Rogan Josh',
-        source: 'kashmirirecipes.com',
-        cuisine: 'Indian',
-        image: '🍛',
-        tags: ['Kashmiri', 'Non-Veg', 'Royal'],
-        ingredients: [
-            'Lamb (1 kg)',
-            'Onions (3 large)',
-            'Yogurt (1 cup)',
-            'Ginger-Garlic Paste (2 tbsp)',
-            'Rogan Josh Masala (3 tbsp)',
-            'Saffron (a pinch)',
-            'Dry Ginger Powder (1 tsp)',
-            'Fennel Powder (1 tbsp)',
-            'Mustard Oil (4 tbsp)',
-            'Salt to taste'
-        ],
-        instructions: `1. Heat mustard oil and fry onions until golden.
-2. Add ginger-garlic paste and sauté.
-3. Add lamb and brown on all sides.
-4. Add rogan josh masala and cook for 5 minutes.
-5. Add yogurt and simmer for 45 minutes.
-6. Add fennel powder and dry ginger.
-7. Cook until meat is tender.
-8. Add saffron soaked in milk.
-9. Garnish with coriander and serve with rice.`,
-        prep_time: 25,
-        cook_time: 55,
-        servings: 6,
-        difficulty: 'Hard',
-        featured: false,
-        rating: 4.7,
-        reviews: 112,
-        calories: 580,
-        origin: 'Kashmir',
-        dietary: 'Non-Vegetarian'
-    },
-    {
-        id: 8,
-        title: 'Vegetable Pulao',
-        source: 'indianrice.com',
-        cuisine: 'Indian',
-        image: '🍚',
-        tags: ['North Indian', 'Vegetarian', 'One-pot'],
-        ingredients: [
-            'Basmati Rice (2 cups)',
-            'Mixed Vegetables (2 cups)',
-            'Onions (2 medium)',
-            'Ginger-Garlic Paste (1 tbsp)',
-            'Cardamom (2 pods)',
-            'Cloves (4-5)',
-            'Cinnamon (1 inch)',
-            'Ghee (2 tbsp)',
-            'Salt to taste',
-            'Coriander Leaves'
-        ],
-        instructions: `1. Rinse rice and soak for 30 minutes.
-2. Heat ghee and add whole spices.
-3. Add onions and sauté until golden.
-4. Add ginger-garlic paste and vegetables.
-5. Sauté for 5 minutes.
-6. Add rice and cook for 2 minutes.
-7. Add water and salt.
-8. Cover and cook until rice is done.
-9. Garnish with coriander.
-10. Serve with raita.`,
-        prep_time: 15,
-        cook_time: 25,
-        servings: 4,
-        difficulty: 'Easy',
-        featured: false,
-        rating: 4.4,
-        reviews: 76,
-        calories: 300,
-        origin: 'India',
-        dietary: 'Vegetarian'
-    },
-    {
-        id: 9,
-        title: 'Malai Kofta',
-        source: 'royalindianrecipes.com',
-        cuisine: 'Indian',
-        image: '🥘',
-        tags: ['North Indian', 'Vegetarian', 'Rich'],
-        ingredients: [
-            'Potatoes (3 large)',
-            'Paneer (200g)',
-            'Cashews (1/2 cup)',
-            'Raisins (1/4 cup)',
-            'Onions (2 large)',
-            'Tomatoes (3 medium)',
-            'Ginger-Garlic Paste (1 tbsp)',
-            'Garam Masala (1 tsp)',
-            'Cream (1/2 cup)',
-            'Oil (for frying)',
-            'Salt to taste'
-        ],
-        instructions: `1. Boil and mash potatoes.
-2. Mix with paneer and shape into balls.
-3. Stuff with cashews and raisins.
-4. Deep fry koftas until golden brown.
-5. Prepare gravy with onions, tomatoes, and spices.
-6. Add cream and simmer.
-7. Add the koftas to the gravy.
-8. Cook for 5 minutes.
-9. Serve hot with naan or rice.`,
-        prep_time: 30,
-        cook_time: 35,
-        servings: 4,
-        difficulty: 'Hard',
-        featured: false,
-        rating: 4.6,
-        reviews: 89,
-        calories: 500,
-        origin: 'North India',
-        dietary: 'Vegetarian'
-    },
-    {
-        id: 10,
-        title: 'Garlic Naan',
-        source: 'indianbreads.com',
-        cuisine: 'Indian',
-        image: '🫓',
-        tags: ['North Indian', 'Vegetarian', 'Bread'],
-        ingredients: [
-            'All-purpose Flour (2 cups)',
-            'Yogurt (1/2 cup)',
-            'Baking Powder (1 tsp)',
-            'Sugar (1 tsp)',
-            'Salt (1/2 tsp)',
-            'Garlic (6 cloves, minced)',
-            'Coriander Leaves',
-            'Butter (for brushing)'
-        ],
-        instructions: `1. Mix flour, baking powder, sugar, and salt.
-2. Add yogurt and knead into a soft dough.
-3. Cover and rest for 2 hours.
-4. Divide into balls and roll out.
-5. Sprinkle minced garlic and coriander.
-6. Cook on hot tawa until bubbles appear.
-7. Flip and cook the other side.
-8. Brush with butter.
-9. Serve hot with any curry.`,
-        prep_time: 20,
-        cook_time: 15,
-        servings: 6,
-        difficulty: 'Easy',
-        featured: false,
-        rating: 4.3,
-        reviews: 54,
-        calories: 200,
-        origin: 'Punjab',
-        dietary: 'Vegetarian'
-    }
-];
+function setupContactPage() {
+    const form = document.getElementById('contactForm');
+    if (!form) return;
 
-// Export for use in other files
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = indianRecipes;
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        showToast('✅ Thank you for your message! We\'ll get back to you soon.', 'success');
+        this.reset();
+    });
 }
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function logoutUser() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    authToken = null;
+    currentUser = null;
+    showToast('Logged out successfully', 'info');
+    setTimeout(() => {
+        window.location.href = 'index.html';
+    }, 500);
+}
+
+// Make functions global for onclick handlers
+window.removePantryItem = removePantryItem;
+window.saveAIRecipe = saveAIRecipe;
+window.regenerateAIRecipe = regenerateAIRecipe;
+window.logoutUser = logoutUser;
+
+// ============================================
+// CONSOLE LOG
+// ============================================
+
+console.log('📦 Pantry App - JavaScript Loaded');
+console.log('🔗 API URL:', API_URL);
+console.log('🤖 AI features ready');

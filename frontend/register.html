@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pantry - Join</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="index.html">
+                <span class="logo-icon">🥘</span>
+                <h1>pantry<span>®</span></h1>
+            </a>
+        </div>
+        <div class="nav-links" id="navLinks">
+            <a href="index.html">Home</a>
+            <a href="recipes.html">Browse</a>
+            <a href="pantry.html">Your Pantry</a>
+            <a href="about.html">About</a>
+            <a href="login.html" class="btn-nav btn-nav-secondary">
+                <i class="fas fa-user"></i> Sign In
+            </a>
+        </div>
+        <div class="hamburger" onclick="toggleMenu()">
+            <i class="fas fa-bars"></i>
+        </div>
+    </nav>
+
+    <!-- REGISTER FORM -->
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <span class="auth-logo">🎁</span>
+                <h1>Join for Rewards!</h1>
+                <p>Get coupons, rewards, and personalized recipes!</p>
+            </div>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="registerUsername"><i class="fas fa-user"></i> Username</label>
+                    <input type="text" id="registerUsername" placeholder="Choose a username" required />
+                </div>
+                <div class="form-group">
+                    <label for="registerEmail"><i class="fas fa-envelope"></i> Email</label>
+                    <input type="email" id="registerEmail" placeholder="you@example.com" required />
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword"><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" id="registerPassword" placeholder="Min 6 characters" required />
+                </div>
+                <button type="submit" class="btn-submit" id="registerBtn">
+                    <i class="fas fa-gift"></i> Create Account & Get Rewards 🎁
+                </button>
+                <div class="auth-toggle">
+                    Already have an account? <a href="login.html">Sign In</a>
+                </div>
+                <div id="registerMessage" class="auth-message"></div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

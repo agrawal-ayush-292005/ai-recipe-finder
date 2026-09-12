@@ -10,6 +10,7 @@
 </head>
 <body>
 
+    <!-- NAVBAR -->
     <nav class="navbar">
         <div class="nav-brand">
             <a href="index.html">
@@ -22,20 +23,19 @@
             <a href="recipes.html">Browse</a>
             <a href="pantry.html" class="active">Your Pantry</a>
             <a href="about.html">About</a>
-            <a href="contact.html">Contact</a>
-            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
             <a href="login.html" class="btn-nav btn-nav-secondary">
                 <i class="fas fa-user"></i> Sign In
             </a>
             <a href="register.html" class="btn-nav btn-nav-primary">
-                <i class="fas fa-gift"></i> Join
+                <i class="fas fa-gift"></i> Join for Rewards
             </a>
         </div>
-        <button class="hamburger" onclick="toggleMenu()">
+        <div class="hamburger" onclick="toggleMenu()">
             <i class="fas fa-bars"></i>
-        </button>
+        </div>
     </nav>
 
+    <!-- PANTRY SECTION -->
     <div class="container">
         <div class="page-header">
             <h1>Your Pantry</h1>
@@ -69,6 +69,16 @@
         </div>
     </div>
 
+    <!-- COOKIE CONSENT -->
+    <div class="cookie-consent" id="cookieConsent">
+        <p>🍪 We use cookies to personalize ads and improve your experience. By using this site, you agree to our use of cookies.</p>
+        <div class="cookie-btns">
+            <button class="btn-decline" id="declineCookies">Decline</button>
+            <button class="btn-accept" id="acceptCookies">Accept</button>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
     <footer class="footer">
         <div class="footer-content">
             <div class="footer-section">
@@ -85,12 +95,10 @@
             </div>
             <div class="footer-section">
                 <h4>Follow Us</h4>
-                <div class="social-links">
-                    <a href="#"><i class="fab fa-facebook"></i></a>
-                    <a href="#"><i class="fab fa-instagram"></i></a>
-                    <a href="#"><i class="fab fa-twitter"></i></a>
-                    <a href="#"><i class="fab fa-youtube"></i></a>
-                </div>
+                <a href="#"><i class="fab fa-facebook"></i> Facebook</a>
+                <a href="#"><i class="fab fa-instagram"></i> Instagram</a>
+                <a href="#"><i class="fab fa-twitter"></i> Twitter</a>
+                <a href="#"><i class="fab fa-youtube"></i> YouTube</a>
             </div>
         </div>
         <div class="footer-bottom">
