@@ -187,4 +187,3 @@ text
 ```bash
 git add README.md
 git commit -m "Short clean README"
-git push origin main
