@@ -244,9 +244,11 @@ document.addEventListener('DOMContentLoaded', function() {
     setupSearch();
     setupFilterTags();
     setupAI();
+    setupVoiceInput();   // ← NEW: Voice input
 
     console.log('✅ App loaded successfully!');
 });
+
 // ============================================
 // HOMEPAGE FUNCTIONS
 // ============================================
@@ -667,6 +669,7 @@ function displayRecipes(recipes, container) {
         `;
     }).join('');
 }
+
 // ============================================
 // AUTH FUNCTIONS
 // ============================================
@@ -967,7 +970,8 @@ async function generateAIRecipe() {
             },
             body: JSON.stringify({
                 ingredients: ingredients,
-                cuisine: cuisine
+                cuisine: cuisine,
+                language: localStorage.getItem('language') || 'en'   // ← NEW
             })
         });
 
@@ -1027,6 +1031,9 @@ function displayAIRecipe(recipe) {
             <div class="ai-result-actions">
                 <button class="btn-save-ai" onclick="saveAIRecipe()">
                     <i class="fas fa-save"></i> Save Recipe
+                </button>
+                <button class="btn-speak-ai" onclick="speakRecipe()">
+                    <i class="fas fa-volume-up"></i> Read Aloud
                 </button>
                 <button class="btn-regenerate-ai" onclick="regenerateAIRecipe()">
                     <i class="fas fa-redo"></i> Regenerate
@@ -1258,6 +1265,243 @@ window.removePantryItem = removePantryItem;
 window.saveAIRecipe = saveAIRecipe;
 window.regenerateAIRecipe = regenerateAIRecipe;
 window.logoutUser = logoutUser;
+
+// ============================================
+// 🎤 VOICE INPUT (Web Speech API)
+// ============================================
+
+let recognition = null;
+let isListening = false;
+
+function setupVoiceInput() {
+    const voiceBtn = document.getElementById('voiceInputBtn');
+    if (!voiceBtn) return;
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+        console.log('⚠️ Voice input not supported in this browser');
+        voiceBtn.style.display = 'none';
+        return;
+    }
+
+    console.log('🎤 Voice input supported');
+
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    const savedLang = localStorage.getItem('language') || 'en';
+    const langMap = { en: 'en-US', hi: 'hi-IN', kn: 'kn-IN', mr: 'mr-IN' };
+    recognition.lang = langMap[savedLang] || 'en-US';
+
+    recognition.onresult = function(event) {
+        const input = document.getElementById('aiIngredients');
+        if (!input) return;
+
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+        }
+
+        transcript = transcript
+            .replace(/\band\b/gi, ',')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        input.value = transcript;
+    };
+
+    recognition.onend = function() {
+        isListening = false;
+        voiceBtn.classList.remove('listening');
+        voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+        removeVoiceStatus();
+        console.log('🎤 Voice input stopped');
+    };
+
+    recognition.onerror = function(event) {
+        console.error('🎤 Voice error:', event.error);
+        isListening = false;
+        voiceBtn.classList.remove('listening');
+        voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+        removeVoiceStatus();
+
+        if (event.error === 'not-allowed') {
+            showToast('Please allow microphone access to use voice input', 'error');
+        } else if (event.error === 'no-speech') {
+            showToast('No speech detected. Try again.', 'warning');
+        } else {
+            showToast('Voice input failed. Try again.', 'error');
+        }
+    };
+
+    voiceBtn.addEventListener('click', function() {
+        if (isListening) {
+            recognition.stop();
+            return;
+        }
+
+        try {
+            recognition.start();
+            isListening = true;
+            voiceBtn.classList.add('listening');
+            voiceBtn.innerHTML = '<i class="fas fa-stop"></i>';
+            showVoiceStatus();
+            console.log('🎤 Voice input started (lang:', recognition.lang, ')');
+        } catch (error) {
+            console.error('🎤 Failed to start:', error);
+        }
+    });
+}
+
+function showVoiceStatus() {
+    removeVoiceStatus();
+    const status = document.createElement('div');
+    status.className = 'voice-status';
+    status.innerHTML = `
+        <span class="pulse-dot"></span>
+        🎤 Listening... Speak your ingredients
+    `;
+    document.body.appendChild(status);
+}
+
+function removeVoiceStatus() {
+    const status = document.querySelector('.voice-status');
+    if (status) status.remove();
+}
+
+// ============================================
+// 🔊 VOICE OUTPUT (Text-to-Speech)
+// ============================================
+
+let currentUtterance = null;
+
+function speakRecipe() {
+    if (!currentAIRecipe) {
+        showToast('No recipe to read!', 'warning');
+        return;
+    }
+
+    const speechSynth = window.speechSynthesis;
+    if (!speechSynth) {
+        showToast('Text-to-speech not supported in this browser', 'error');
+        return;
+    }
+
+    const speakBtn = document.querySelector('.btn-speak-ai');
+
+    if (speechSynth.speaking) {
+        speechSynth.cancel();
+        resetSpeakButton();
+        return;
+    }
+
+    const savedLang = localStorage.getItem('language') || 'en';
+    const langMap = { en: 'en-US', hi: 'hi-IN', kn: 'kn-IN', mr: 'mr-IN' };
+    const locale = langMap[savedLang] || 'en-US';
+
+    const ingredientsText = currentAIRecipe.ingredients
+        .map(ing => {
+            if (typeof ing === 'string') return ing;
+            const qty = ing.quantity ? `${ing.quantity} ${ing.unit || ''}` : '';
+            return `${qty} ${ing.name || ''}`.trim();
+        })
+        .join(', ');
+
+    const instructionsText = currentAIRecipe.instructions
+        .replace(/\n+/g, '. ')
+        .replace(/^\d+\.\s*/gm, '');
+
+    const fullText = `
+        ${currentAIRecipe.name || 'Recipe'}.
+        ${currentAIRecipe.description || ''}
+        Ingredients: ${ingredientsText}.
+        Instructions: ${instructionsText}
+        ${currentAIRecipe.tips ? 'Pro tip: ' + currentAIRecipe.tips : ''}
+    `;
+
+    currentUtterance = new SpeechSynthesisUtterance(fullText);
+    currentUtterance.rate = 0.95;
+    currentUtterance.pitch = 1;
+    currentUtterance.volume = 1;
+    currentUtterance.lang = locale;
+
+    const voices = speechSynth.getVoices();
+    const preferredVoice =
+        voices.find(v => v.lang === locale && v.name.includes('Google')) ||
+        voices.find(v => v.lang === locale) ||
+        voices.find(v => v.lang.startsWith(locale.split('-')[0])) ||
+        voices[0];
+
+    if (preferredVoice) currentUtterance.voice = preferredVoice;
+
+    currentUtterance.onend = function() {
+        resetSpeakButton();
+        console.log('🔊 Finished speaking');
+    };
+
+    currentUtterance.onerror = function(event) {
+        console.error('🔊 Speech error:', event);
+        resetSpeakButton();
+        showToast('Read aloud failed. Try again.', 'error');
+    };
+
+    if (speakBtn) {
+        speakBtn.classList.add('speaking');
+        speakBtn.innerHTML = '<i class="fas fa-stop"></i> Stop';
+    }
+
+    speechSynth.speak(currentUtterance);
+    console.log('🔊 Speaking recipe in', locale);
+}
+
+function resetSpeakButton() {
+    const btn = document.querySelector('.btn-speak-ai');
+    if (btn) {
+        btn.classList.remove('speaking');
+        btn.innerHTML = '<i class="fas fa-volume-up"></i> Read Aloud';
+    }
+}
+
+// ============================================
+// LANGUAGE CHANGE HOOK
+// ============================================
+
+// Hook into changeLanguage() from translations.js so voice picks up new lang
+(function hookLanguageChange() {
+    if (typeof window.changeLanguage !== 'function') {
+        console.log('⚠️ changeLanguage not found — make sure translations.js loads BEFORE script.js');
+        return;
+    }
+
+    const originalChangeLanguage = window.changeLanguage;
+
+    window.changeLanguage = function(lang) {
+        if (originalChangeLanguage) originalChangeLanguage(lang);
+
+        // Update voice recognition language
+        if (recognition) {
+            const langMap = { en: 'en-US', hi: 'hi-IN', kn: 'kn-IN', mr: 'mr-IN' };
+            recognition.lang = langMap[lang] || 'en-US';
+        }
+
+        // Stop any ongoing speech
+        if (window.speechSynthesis && window.speechSynthesis.speaking) {
+            window.speechSynthesis.cancel();
+            resetSpeakButton();
+        }
+
+        console.log('🔄 Language updated for voice:', lang);
+    };
+})();
+
+// ============================================
+// GLOBAL EXPORTS
+// ============================================
+
+window.speakRecipe = speakRecipe;
+window.setupVoiceInput = setupVoiceInput;
 
 // ============================================
 // CONSOLE LOG
