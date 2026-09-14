@@ -2491,3 +2491,7 @@ button {
         color: #000 !important;
     }
 }
+/* Hide cookie consent banner */
+.cookie-consent {
+    display: none !important;
+}
