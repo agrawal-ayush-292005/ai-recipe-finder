@@ -1,5 +1,7 @@
 // ============================================
 // AI ROUTES - Gemini API Integration
+// Multi-language support: en / hi / kn / mr
+// Model: gemini-3.6-flash
 // ============================================
 
 // ─── Import #1: Express ───
@@ -25,6 +27,7 @@ const router = express.Router();
 // ─── Import #6: dotenv ───
 // Loads environment variables from .env
 require('dotenv').config();
+
 // ============================================
 // INITIALIZE GEMINI CLIENT
 // ============================================
@@ -32,6 +35,21 @@ require('dotenv').config();
 // The SDK automatically reads GEMINI_API_KEY
 // from process.env (loaded by dotenv)
 const ai = new GoogleGenAI({});
+
+// ============================================
+// LANGUAGE MAPS
+// ============================================
+
+// Maps frontend language code → full language name for Gemini prompt
+const LANGUAGE_NAMES = {
+    en: 'English',
+    hi: 'Hindi',
+    kn: 'Kannada',
+    mr: 'Marwari'
+};
+
+const DEFAULT_LANGUAGE = 'English';
+
 // ============================================
 // 1. GENERATE RECIPE FROM INGREDIENTS
 // POST /api/ai/generate-recipe
@@ -40,13 +58,18 @@ const ai = new GoogleGenAI({});
 router.post('/generate-recipe', authenticate, async (req, res) => {
     try {
         // ─── STEP 1: Get input from user ───
-        const { ingredients, cuisine } = req.body;
+        const { ingredients, cuisine, language } = req.body;
         const userId = req.userId; // From JWT token
+
+        // Resolve target language
+        const langCode = (language || 'en').toLowerCase();
+        const targetLanguage = LANGUAGE_NAMES[langCode] || DEFAULT_LANGUAGE;
 
         console.log('═══════════════════════════════════════════');
         console.log('📥 New AI Recipe Request');
         console.log('📋 Ingredients:', ingredients);
         console.log('🌍 Cuisine:', cuisine || 'Any');
+        console.log('🗣️ Language:', targetLanguage, `(${langCode})`);
         console.log('👤 User ID:', userId);
         console.log('═══════════════════════════════════════════');
 
@@ -58,7 +81,7 @@ router.post('/generate-recipe', authenticate, async (req, res) => {
             });
         }
 
-        // ─── STEP 3: Build AI prompt ───
+        // ─── STEP 3: Build AI prompt (language-aware) ───
         let prompt = `You are a professional chef. Create a detailed recipe using these ingredients: ${ingredients}.`;
 
         if (cuisine) {
@@ -67,23 +90,29 @@ router.post('/generate-recipe', authenticate, async (req, res) => {
 
         prompt += `
 
-        Return ONLY valid JSON in this EXACT format, with no other text or markdown:
-        {
-            "name": "Recipe Name",
-            "description": "A brief, appetizing description of the dish",
-            "cuisine": "${cuisine || 'Fusion'}",
-            "difficulty": "Easy/Medium/Hard",
-            "prep_time": 15,
-            "cook_time": 30,
-            "servings": 4,
-            "calories": 350,
-            "ingredients": [
-                {"name": "ingredient1", "quantity": "2", "unit": "cups"},
-                {"name": "ingredient2", "quantity": "500", "unit": "g"}
-            ],
-            "instructions": "Step 1\\nStep 2\\nStep 3\\nStep 4",
-            "tips": "Optional cooking tips"
-        }`;
+CRITICAL INSTRUCTION — LANGUAGE:
+You MUST respond ONLY in ${targetLanguage}.
+Every field of the JSON below — the recipe name, description, ingredient names, units, instructions, and tips — must be written in ${targetLanguage}.
+Do NOT mix languages. Do NOT add English translations in parentheses.
+If the language is Hindi, use Devanagari script. If Kannada, use Kannada script. If Marwari, use Devanagari script.
+
+Return ONLY valid JSON in this EXACT format, with no other text or markdown:
+{
+    "name": "Recipe Name in ${targetLanguage}",
+    "description": "A brief, appetizing description in ${targetLanguage}",
+    "cuisine": "${cuisine || 'Fusion'}",
+    "difficulty": "Easy/Medium/Hard",
+    "prep_time": 15,
+    "cook_time": 30,
+    "servings": 4,
+    "calories": 350,
+    "ingredients": [
+        {"name": "ingredient1 in ${targetLanguage}", "quantity": "2", "unit": "cups"},
+        {"name": "ingredient2 in ${targetLanguage}", "quantity": "500", "unit": "g"}
+    ],
+    "instructions": "Step 1 in ${targetLanguage}\\nStep 2 in ${targetLanguage}\\nStep 3 in ${targetLanguage}\\nStep 4 in ${targetLanguage}",
+    "tips": "Optional cooking tips in ${targetLanguage}"
+}`;
 
         console.log('🤖 Calling Gemini API with model: gemini-3.6-flash');
 
@@ -93,7 +122,7 @@ router.post('/generate-recipe', authenticate, async (req, res) => {
 
         try {
             const response = await ai.models.generateContent({
-                model: 'gemini-3.6-flash', // ✅ CURRENT MODEL
+                model: 'gemini-3.6-flash', // ✅ YOUR MODEL — UNCHANGED
                 contents: prompt,
             });
 
@@ -105,11 +134,26 @@ router.post('/generate-recipe', authenticate, async (req, res) => {
             console.error('❌ AI API Error:', aiError.message);
             usedFallback = true;
 
-            // Fallback recipe if AI fails
+            // Fallback recipe if AI fails (localized where possible)
             const ingredientsList = ingredients.split(',').map(i => i.trim());
+
+            const fallbackNames = {
+                en: `${ingredientsList[0].charAt(0).toUpperCase() + ingredientsList[0].slice(1)} Delight`,
+                hi: `${ingredientsList[0]} डिलाइट`,
+                kn: `${ingredientsList[0]} ಡಿಲೈಟ್`,
+                mr: `${ingredientsList[0]} डिलाइट`
+            };
+
+            const fallbackDesc = {
+                en: `A delicious recipe using ${ingredients}`,
+                hi: `${ingredients} से बनी स्वादिष्ट रेसिपी`,
+                kn: `${ingredients} ಬಳಸಿ ರುಚಿಕರವಾದ ಪಾಕವಿಧಾನ`,
+                mr: `${ingredients} सूं बणी स्वादिष्ट रेसिपी`
+            };
+
             aiResponse = JSON.stringify({
-                name: `${ingredientsList[0].charAt(0).toUpperCase() + ingredientsList[0].slice(1)} Delight`,
-                description: `A delicious recipe using ${ingredients}`,
+                name: fallbackNames[langCode] || fallbackNames.en,
+                description: fallbackDesc[langCode] || fallbackDesc.en,
                 cuisine: cuisine || 'Fusion',
                 difficulty: 'Easy',
                 prep_time: 15,
@@ -142,6 +186,22 @@ router.post('/generate-recipe', authenticate, async (req, res) => {
             recipeData = JSON.parse(cleanedResponse);
             console.log('✅ Recipe parsed successfully');
             console.log('📛 Recipe name:', recipeData.name);
+
+            // Normalize ingredients array (allow strings or objects)
+            if (!Array.isArray(recipeData.ingredients)) {
+                recipeData.ingredients = [recipeData.ingredients];
+            }
+            recipeData.ingredients = recipeData.ingredients.map(ing => {
+                if (typeof ing === 'string') {
+                    return { name: ing, quantity: '', unit: '' };
+                }
+                return {
+                    name: ing.name || '',
+                    quantity: ing.quantity || '',
+                    unit: ing.unit || ''
+                };
+            });
+
         } catch (parseError) {
             console.error('❌ Failed to parse AI response');
             console.error('Raw response:', cleanedResponse.substring(0, 200));
@@ -170,7 +230,7 @@ router.post('/generate-recipe', authenticate, async (req, res) => {
         try {
             await pool.query(
                 'INSERT INTO search_history (user_id, query) VALUES ($1, $2)',
-                [userId, ingredients]
+                [userId, `${ingredients} [${langCode}]`]
             );
             console.log('✅ Search history saved');
         } catch (dbError) {
@@ -186,6 +246,7 @@ router.post('/generate-recipe', authenticate, async (req, res) => {
             success: true,
             generated: !usedFallback,
             recipe: recipeData,
+            language: langCode,
             searched_ingredients: ingredients
         });
 
@@ -198,6 +259,7 @@ router.post('/generate-recipe', authenticate, async (req, res) => {
         });
     }
 });
+
 // ============================================
 // 2. GET INGREDIENT SUBSTITUTIONS
 // POST /api/ai/substitute
@@ -231,7 +293,7 @@ router.post('/substitute', authenticate, async (req, res) => {
 
         try {
             const response = await ai.models.generateContent({
-                model: 'gemini-3.6-flash',
+                model: 'gemini-3.6-flash', // ✅ YOUR MODEL — UNCHANGED
                 contents: prompt,
             });
 
@@ -273,4 +335,5 @@ router.post('/substitute', authenticate, async (req, res) => {
         });
     }
 });
+
 module.exports = router;
