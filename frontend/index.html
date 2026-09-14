@@ -19,14 +19,26 @@
             </a>
         </div>
         <div class="nav-links" id="navLinks">
-            <a href="index.html" class="active">Home</a>
-            <a href="recipes.html">Browse</a>
-            <a href="pantry.html">Your Pantry</a>
-            <a href="about.html">About</a>
-            <a href="login.html" class="btn-nav btn-nav-secondary">
+            <a href="index.html" class="active" data-i18n="home">Home</a>
+            <a href="recipes.html" data-i18n="browse">Browse</a>
+            <a href="pantry.html" data-i18n="yourPantry">Your Pantry</a>
+            <a href="about.html" data-i18n="about">About</a>
+            <a href="contact.html" data-i18n="contact">Contact</a>
+
+            <!-- LANGUAGE SWITCHER -->
+            <div class="language-switcher">
+                <select id="languageSelect" onchange="changeLanguage(this.value)">
+                    <option value="en">🇬🇧 English</option>
+                    <option value="hi">🇮🇳 हिन्दी</option>
+                    <option value="kn">🇮🇳 ಕನ್ನಡ</option>
+                    <option value="mr">🇮🇳 मारवाड़ी</option>
+                </select>
+            </div>
+
+            <a href="login.html" class="btn-nav btn-nav-secondary" data-i18n="signIn">
                 <i class="fas fa-user"></i> Sign In
             </a>
-            <a href="register.html" class="btn-nav btn-nav-primary">
+            <a href="register.html" class="btn-nav btn-nav-primary" data-i18n="join">
                 <i class="fas fa-gift"></i> Join for Rewards
             </a>
         </div>
@@ -37,22 +49,22 @@
 
     <!-- HERO SECTION -->
     <section class="hero">
-        <h1>What do you want to <span>cook</span>?</h1>
-        <p>Discover delicious recipes from around the world using ingredients you already have.</p>
+        <h1><span data-i18n="heroTitle">What do you want to</span> <span data-i18n="heroTitleHighlight">cook</span>?</h1>
+        <p data-i18n="heroSubtitle">Discover delicious recipes from around the world using ingredients you already have.</p>
 
         <div class="search-container">
-            <input type="text" id="searchInput" placeholder="chicken marsala, pie, chocolate cake..." />
-            <button id="searchBtn"><i class="fas fa-search"></i> Search</button>
+            <input type="text" id="searchInput" placeholder="chicken marsala, pie, chocolate cake..." data-i18n-placeholder="searchPlaceholder" />
+            <button id="searchBtn"><i class="fas fa-search"></i> <span data-i18n="searchButton">Search</span></button>
         </div>
 
         <div class="quick-filters">
-            <button class="filter-tag active" data-filter="all">All</button>
-            <button class="filter-tag" data-filter="chicken">🍗 Chicken</button>
-            <button class="filter-tag" data-filter="pasta">🍝 Pasta</button>
-            <button class="filter-tag" data-filter="vegetarian">🥬 Vegetarian</button>
-            <button class="filter-tag" data-filter="soup">🍲 Soup</button>
-            <button class="filter-tag" data-filter="curry">🍛 Curry</button>
-            <button class="filter-tag" data-filter="dessert">🍰 Dessert</button>
+            <button class="filter-tag active" data-filter="all" data-i18n="all">All</button>
+            <button class="filter-tag" data-filter="chicken" data-i18n="chicken">🍗 Chicken</button>
+            <button class="filter-tag" data-filter="pasta" data-i18n="pasta">🍝 Pasta</button>
+            <button class="filter-tag" data-filter="vegetarian" data-i18n="vegetarian">🥬 Vegetarian</button>
+            <button class="filter-tag" data-filter="soup" data-i18n="soup">🍲 Soup</button>
+            <button class="filter-tag" data-filter="curry" data-i18n="curry">🍛 Curry</button>
+            <button class="filter-tag" data-filter="dessert" data-i18n="dessert">🍰 Dessert</button>
         </div>
     </section>
 
@@ -61,10 +73,10 @@
         <div class="ai-header">
             <div class="ai-title">
                 <i class="fas fa-robot"></i>
-                <h2>AI Recipe Generator</h2>
-                <span class="ai-badge">Powered by Google Gemini</span>
+                <h2 data-i18n="aiTitle">AI Recipe Generator</h2>
+                <span class="ai-badge" data-i18n="aiBadge">Powered by Google Gemini</span>
             </div>
-            <p class="ai-subtitle">
+            <p class="ai-subtitle" data-i18n="aiSubtitle">
                 Enter ingredients you have and let AI create a custom recipe for you!
             </p>
         </div>
@@ -74,10 +86,14 @@
                 type="text" 
                 id="aiIngredients" 
                 placeholder="e.g., chicken, rice, tomato, garlic"
+                data-i18n-placeholder="aiPlaceholder"
                 autocomplete="off"
             >
+            <button type="button" id="voiceInputBtn" class="btn-voice" title="Speak ingredients">
+                <i class="fas fa-microphone"></i>
+            </button>
             <select id="aiCuisine">
-                <option value="">Any Cuisine</option>
+                <option value="" data-i18n="anyCuisine">Any Cuisine</option>
                 <option value="Italian">🇮🇹 Italian</option>
                 <option value="Indian">🇮🇳 Indian</option>
                 <option value="Chinese">🇨🇳 Chinese</option>
@@ -88,13 +104,13 @@
             </select>
             <button id="generateAIRecipeBtn" class="btn-ai-generate">
                 <i class="fas fa-wand-magic-sparkles"></i>
-                Generate Recipe
+                <span data-i18n="aiGenerate">Generate Recipe</span>
             </button>
         </div>
 
         <div id="aiLoading" class="ai-loading" style="display: none;">
             <div class="spinner"></div>
-            <p>🧠 AI is cooking up something delicious...</p>
+            <p data-i18n="aiCookingMessage">🧠 AI is cooking up something delicious...</p>
         </div>
 
         <div id="aiResult" class="ai-result" style="display: none;">
@@ -105,8 +121,8 @@
     <!-- POPULAR RECIPES -->
     <div class="container">
         <div class="section-header">
-            <h2><i class="fas fa-fire"></i> Popular Recipes</h2>
-            <a href="recipes.html" class="view-all">View all →</a>
+            <h2><i class="fas fa-fire"></i> <span data-i18n="popularRecipes">Popular Recipes</span></h2>
+            <a href="recipes.html" class="view-all" data-i18n="viewAll">View all →</a>
         </div>
         <div class="recipes-grid" id="recipesGrid">
             <!-- Recipes loaded by JavaScript -->
@@ -115,41 +131,64 @@
 
     <!-- COOKIE CONSENT -->
     <div class="cookie-consent" id="cookieConsent">
-        <p>🍪 We use cookies to personalize ads and improve your experience. By using this site, you agree to our use of cookies.</p>
+        <p data-i18n="cookieText">🍪 We use cookies to personalize ads and improve your experience. By using this site, you agree to our use of cookies.</p>
         <div class="cookie-btns">
-            <button class="btn-decline" id="declineCookies">Decline</button>
-            <button class="btn-accept" id="acceptCookies">Accept</button>
+            <button class="btn-decline" id="declineCookies" data-i18n="cookieDecline">Decline</button>
+            <button class="btn-accept" id="acceptCookies" data-i18n="cookieAccept">Accept</button>
         </div>
     </div>
 
     <!-- FOOTER -->
     <footer class="footer">
         <div class="footer-content">
-            <div class="footer-section">
-                <h3>pantry®</h3>
-                <p>Discover delicious recipes from around the world.</p>
+            <div class="footer-section footer-brand">
+                <div class="footer-logo">
+                    <span class="logo-icon">🥘</span>
+                    <h3>pantry<span>®</span></h3>
+                </div>
+                <p data-i18n="footerTagline">Discover delicious recipes from around the world using ingredients you already have.</p>
+                <div class="social-links">
+                    <a href="https://twitter.com/ayushagraw2005" target="_blank" rel="noopener" aria-label="Twitter">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="https://instagram.com/agrawalayush_29" target="_blank" rel="noopener" aria-label="Instagram">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="https://www.linkedin.com/in/ayush-agrawal-7b6a94329" target="_blank" rel="noopener" aria-label="LinkedIn">
+                        <i class="fab fa-linkedin-in"></i>
+                    </a>
+                    <a href="https://github.com/agrawal-ayush-292005" target="_blank" rel="noopener" aria-label="GitHub">
+                        <i class="fab fa-github"></i>
+                    </a>
+                </div>
             </div>
             <div class="footer-section">
-                <h4>Quick Links</h4>
-                <a href="index.html">Home</a>
-                <a href="recipes.html">Recipes</a>
-                <a href="pantry.html">Pantry</a>
-                <a href="about.html">About</a>
-                <a href="contact.html">Contact</a>
+                <h4 data-i18n="quickLinks">Quick Links</h4>
+                <a href="index.html"><i class="fas fa-chevron-right"></i> <span data-i18n="home">Home</span></a>
+                <a href="recipes.html"><i class="fas fa-chevron-right"></i> <span data-i18n="browseRecipes">Browse Recipes</span></a>
+                <a href="pantry.html"><i class="fas fa-chevron-right"></i> <span data-i18n="yourPantry">Your Pantry</span></a>
+                <a href="about.html"><i class="fas fa-chevron-right"></i> <span data-i18n="about">About Us</span></a>
+                <a href="contact.html"><i class="fas fa-chevron-right"></i> <span data-i18n="contact">Contact</span></a>
             </div>
             <div class="footer-section">
-                <h4>Follow Us</h4>
-                <a href="#"><i class="fab fa-facebook"></i> Facebook</a>
-                <a href="#"><i class="fab fa-instagram"></i> Instagram</a>
-                <a href="#"><i class="fab fa-twitter"></i> Twitter</a>
-                <a href="#"><i class="fab fa-youtube"></i> YouTube</a>
+                <h4 data-i18n="contactUs">Contact Us</h4>
+                <div class="contact-item">
+                    <i class="fas fa-envelope"></i>
+                    <div>
+                        <strong data-i18n="emailLabel">Email</strong>
+                        <a href="mailto:ayushagrawal0931@gmail.com">ayushagrawal0931@gmail.com</a>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="footer-bottom">
-            <p>&copy; 2026 pantry. All rights reserved.</p>
+            <div class="footer-bottom-content">
+                <p>&copy; 2026 <strong>pantry®</strong>. <span data-i18n="allRights">All rights reserved.</span></p>
+            </div>
         </div>
     </footer>
 
+    <script src="js/translations.js"></script>
     <script src="js/script.js"></script>
 </body>
 </html>

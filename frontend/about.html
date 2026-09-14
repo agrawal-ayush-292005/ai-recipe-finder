@@ -19,14 +19,26 @@
             </a>
         </div>
         <div class="nav-links" id="navLinks">
-            <a href="index.html">Home</a>
-            <a href="recipes.html">Browse</a>
-            <a href="pantry.html">Your Pantry</a>
-            <a href="about.html" class="active">About</a>
-            <a href="login.html" class="btn-nav btn-nav-secondary">
+            <a href="index.html" data-i18n="home">Home</a>
+            <a href="recipes.html" data-i18n="browse">Browse</a>
+            <a href="pantry.html" data-i18n="yourPantry">Your Pantry</a>
+            <a href="about.html" class="active" data-i18n="about">About</a>
+            <a href="contact.html" data-i18n="contact">Contact</a>
+
+            <!-- LANGUAGE SWITCHER -->
+            <div class="language-switcher">
+                <select id="languageSelect" onchange="changeLanguage(this.value)">
+                    <option value="en">🇬🇧 English</option>
+                    <option value="hi">🇮🇳 हिन्दी</option>
+                    <option value="kn">🇮🇳 ಕನ್ನಡ</option>
+                    <option value="mr">🇮🇳 मारवाड़ी</option>
+                </select>
+            </div>
+
+            <a href="login.html" class="btn-nav btn-nav-secondary" data-i18n="signIn">
                 <i class="fas fa-user"></i> Sign In
             </a>
-            <a href="register.html" class="btn-nav btn-nav-primary">
+            <a href="register.html" class="btn-nav btn-nav-primary" data-i18n="join">
                 <i class="fas fa-gift"></i> Join for Rewards
             </a>
         </div>
@@ -38,31 +50,31 @@
     <!-- ABOUT CONTENT -->
     <div class="container">
         <div class="page-header">
-            <h1>About Us</h1>
-            <p>Learn more about our story and mission</p>
+            <h1 data-i18n="aboutTitle">About Us</h1>
+            <p data-i18n="aboutSubtitle">Learn more about our story and mission</p>
         </div>
         <div class="about-content">
             <div class="about-section">
-                <h2>Our Story</h2>
-                <p>Pantry was born from a simple idea: Everyone deserves to cook delicious meals with what they already have at home. We believe that cooking should be accessible, enjoyable, and creative.</p>
-                <p>Our platform helps you discover recipes based on ingredients you already have, reducing food waste and making cooking more fun.</p>
+                <h2 data-i18n="ourStory">Our Story</h2>
+                <p data-i18n="ourStoryText1">Pantry was born from a simple idea: Everyone deserves to cook delicious meals with what they already have at home. We believe that cooking should be accessible, enjoyable, and creative.</p>
+                <p data-i18n="ourStoryText2">Our platform helps you discover recipes based on ingredients you already have, reducing food waste and making cooking more fun.</p>
             </div>
             <div class="about-section">
-                <h2>Our Mission</h2>
-                <p>To empower home cooks around the world with intelligent recipe suggestions, reduce food waste, and make cooking a joyful experience for everyone.</p>
+                <h2 data-i18n="ourMission">Our Mission</h2>
+                <p data-i18n="ourMissionText">To empower home cooks around the world with intelligent recipe suggestions, reduce food waste, and make cooking a joyful experience for everyone.</p>
             </div>
 
             <!-- MEET THE FOUNDER -->
             <div class="about-section">
-                <h2>Meet the Founder</h2>
+                <h2 data-i18n="meetFounder">Meet the Founder</h2>
                 <div class="founder-card">
                     <div class="founder-avatar">
                         <i class="fas fa-user-tie"></i>
                     </div>
                     <div class="founder-info">
                         <h3>Ayush Agrawal</h3>
-                        <p class="founder-role">Full-Stack Developer & AI Enthusiast</p>
-                        <p>Passionate about building intelligent applications that solve real-world problems. Created Pantry to help people cook smarter with AI.</p>
+                        <p class="founder-role" data-i18n="founderRole">Full-Stack Developer & AI Enthusiast</p>
+                        <p data-i18n="founderBio">Passionate about building intelligent applications that solve real-world problems. Created Pantry to help people cook smarter with AI.</p>
                         <div class="founder-contact">
                             <a href="mailto:ayushagrawal0931@gmail.com"><i class="fas fa-envelope"></i> ayushagrawal0931@gmail.com</a>
                             <a href="tel:+918528512005"><i class="fas fa-phone"></i> +91 85285 12005</a>
@@ -74,23 +86,23 @@
             <div class="features-grid">
                 <div class="feature-card">
                     <i class="fas fa-robot"></i>
-                    <h3>AI-Powered</h3>
-                    <p>Get personalized recipe suggestions using AI</p>
+                    <h3 data-i18n="featureAI">AI-Powered</h3>
+                    <p data-i18n="featureAIText">Get personalized recipe suggestions using AI</p>
                 </div>
                 <div class="feature-card">
                     <i class="fas fa-box"></i>
-                    <h3>Pantry Management</h3>
-                    <p>Track what you have and get recipe ideas</p>
+                    <h3 data-i18n="featurePantry">Pantry Management</h3>
+                    <p data-i18n="featurePantryText">Track what you have and get recipe ideas</p>
                 </div>
                 <div class="feature-card">
                     <i class="fas fa-gift"></i>
-                    <h3>Rewards & Coupons</h3>
-                    <p>Earn rewards for adding recipes and engaging</p>
+                    <h3 data-i18n="featureRewards">Rewards & Coupons</h3>
+                    <p data-i18n="featureRewardsText">Earn rewards for adding recipes and engaging</p>
                 </div>
                 <div class="feature-card">
                     <i class="fas fa-globe"></i>
-                    <h3>Global Cuisine</h3>
-                    <p>Explore recipes from around the world</p>
+                    <h3 data-i18n="featureGlobal">Global Cuisine</h3>
+                    <p data-i18n="featureGlobalText">Explore recipes from around the world</p>
                 </div>
             </div>
         </div>
@@ -98,10 +110,10 @@
 
     <!-- COOKIE CONSENT -->
     <div class="cookie-consent" id="cookieConsent">
-        <p>🍪 We use cookies to personalize ads and improve your experience. By using this site, you agree to our use of cookies.</p>
+        <p data-i18n="cookieText">🍪 We use cookies to personalize ads and improve your experience. By using this site, you agree to our use of cookies.</p>
         <div class="cookie-btns">
-            <button class="btn-decline" id="declineCookies">Decline</button>
-            <button class="btn-accept" id="acceptCookies">Accept</button>
+            <button class="btn-decline" id="declineCookies" data-i18n="cookieDecline">Decline</button>
+            <button class="btn-accept" id="acceptCookies" data-i18n="cookieAccept">Accept</button>
         </div>
     </div>
 
@@ -114,7 +126,7 @@
                     <span class="logo-icon">🥘</span>
                     <h3>pantry<span>®</span></h3>
                 </div>
-                <p>Discover delicious recipes from around the world using ingredients you already have. AI-powered cooking made simple.</p>
+                <p data-i18n="footerTagline">Discover delicious recipes from around the world using ingredients you already have. AI-powered cooking made simple.</p>
                 <div class="social-links">
                     <a href="https://twitter.com/ayushagraw2005" target="_blank" rel="noopener" aria-label="Twitter" title="Twitter">
                         <i class="fab fa-twitter"></i>
@@ -133,35 +145,35 @@
 
             <!-- Column 2: Quick Links -->
             <div class="footer-section">
-                <h4>Quick Links</h4>
-                <a href="index.html"><i class="fas fa-chevron-right"></i> Home</a>
-                <a href="recipes.html"><i class="fas fa-chevron-right"></i> Browse Recipes</a>
-                <a href="pantry.html"><i class="fas fa-chevron-right"></i> Your Pantry</a>
-                <a href="about.html"><i class="fas fa-chevron-right"></i> About Us</a>
-                <a href="contact.html"><i class="fas fa-chevron-right"></i> Contact</a>
+                <h4 data-i18n="quickLinks">Quick Links</h4>
+                <a href="index.html"><i class="fas fa-chevron-right"></i> <span data-i18n="home">Home</span></a>
+                <a href="recipes.html"><i class="fas fa-chevron-right"></i> <span data-i18n="browseRecipes">Browse Recipes</span></a>
+                <a href="pantry.html"><i class="fas fa-chevron-right"></i> <span data-i18n="yourPantry">Your Pantry</span></a>
+                <a href="about.html"><i class="fas fa-chevron-right"></i> <span data-i18n="about">About Us</span></a>
+                <a href="contact.html"><i class="fas fa-chevron-right"></i> <span data-i18n="contact">Contact</span></a>
             </div>
 
             <!-- Column 3: Contact Info -->
             <div class="footer-section">
-                <h4>Contact Us</h4>
+                <h4 data-i18n="contactUs">Contact Us</h4>
                 <div class="contact-item">
                     <i class="fas fa-envelope"></i>
                     <div>
-                        <strong>Email</strong>
+                        <strong data-i18n="emailLabel">Email</strong>
                         <a href="mailto:ayushagrawal0931@gmail.com">ayushagrawal0931@gmail.com</a>
                     </div>
                 </div>
                 <div class="contact-item">
                     <i class="fas fa-phone-alt"></i>
                     <div>
-                        <strong>Phone</strong>
+                        <strong data-i18n="phoneLabel">Phone</strong>
                         <a href="tel:+918528512005">+91 85285 12005</a>
                     </div>
                 </div>
                 <div class="contact-item">
                     <i class="fas fa-map-marker-alt"></i>
                     <div>
-                        <strong>Address</strong>
+                        <strong data-i18n="addressLabel">Address</strong>
                         <p>Gorakhpur, Uttar Pradesh<br>India</p>
                     </div>
                 </div>
@@ -169,26 +181,26 @@
 
             <!-- Column 4: About Founder -->
             <div class="footer-section">
-                <h4>About Founder</h4>
+                <h4 data-i18n="aboutFounder">About Founder</h4>
                 <div class="contact-item">
                     <i class="fas fa-user-tie"></i>
                     <div>
                         <strong>Ayush Agrawal</strong>
-                        <p>Full-Stack Developer & AI Enthusiast</p>
+                        <p data-i18n="founderRole">Full-Stack Developer & AI Enthusiast</p>
                     </div>
                 </div>
                 <div class="contact-item">
                     <i class="fas fa-code"></i>
                     <div>
-                        <strong>Tech Stack</strong>
+                        <strong data-i18n="techStack">Tech Stack</strong>
                         <p>Node.js • Express • PostgreSQL • Gemini AI</p>
                     </div>
                 </div>
                 <div class="contact-item">
                     <i class="fas fa-heart"></i>
                     <div>
-                        <strong>Made with Love</strong>
-                        <p>In India 🇮🇳</p>
+                        <strong data-i18n="madeWithLove">Made with Love</strong>
+                        <p data-i18n="madeInIndia">In India 🇮🇳</p>
                     </div>
                 </div>
             </div>
@@ -197,16 +209,17 @@
         <!-- Footer Bottom -->
         <div class="footer-bottom">
             <div class="footer-bottom-content">
-                <p>&copy; 2026 <strong>pantry®</strong>. All rights reserved. Made with ❤️ by Ayush Agrawal</p>
+                <p>&copy; 2026 <strong>pantry®</strong>. <span data-i18n="allRights">All rights reserved.</span> <span data-i18n="madeBy">Made with ❤️ by Ayush Agrawal</span></p>
                 <div class="footer-bottom-links">
-                    <a href="#">Privacy Policy</a>
-                    <a href="#">Terms of Service</a>
-                    <a href="#">Cookies</a>
+                    <a href="#" data-i18n="privacyPolicy">Privacy Policy</a>
+                    <a href="#" data-i18n="termsOfService">Terms of Service</a>
+                    <a href="#" data-i18n="cookiesLabel">Cookies</a>
                 </div>
             </div>
         </div>
     </footer>
 
+    <script src="js/translations.js"></script>
     <script src="js/script.js"></script>
 </body>
 </html>
